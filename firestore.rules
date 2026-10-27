@@ -1,0 +1,761 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: {userId}
+    // Fields:
+    //   - uid: string (required) - The user's UID
+    //   - email: string (required) - The user's email
+    //   - displayName: string (optional) - The user's name
+    //   - role: string (required) - 'employer' or 'worker'
+    //   - dni: string (optional) - National ID
+    //   - createdAt: timestamp (required) - Creation time
+    //
+    // Collection: posts
+    // Document ID: {postId}
+    // Fields:
+    //   - title: string (required, max 100) - Post title
+    //   - content: string (required, max 5000) - Post content
+    //   - authorId: string (required) - UID of creator
+    //   - authorName: string (required, max 100) - Name of creator
+    //   - type: string (required) - 'news', 'flyer', 'notice'
+    //   - createdAt: timestamp (required) - Creation time
+    //
+    // Collection: documents
+    // Document ID: {documentId}
+    // Fields:
+    //   - title: string (required, max 100) - Document title
+    //   - description: string (required, max 500) - Document description
+    //   - url: string (required, max 1000) - Document URL
+    //   - uploadedBy: string (required) - UID of uploader
+    //   - createdAt: timestamp (required) - Upload time
+    //
+    // Collection: reports
+    // Document ID: {reportId}
+    // Fields:
+    //   - type: string (required) - 'accident', 'incident', 'unsafe_act', 'unsafe_condition'
+    //   - description: string (required, max 2000) - Event description
+    //   - location: string (required, max 200) - Event location
+    //   - date: string (required, max 50) - Event date
+    //   - reportedBy: string (required) - UID of reporter
+    //   - reportedByName: string (required, max 100) - Name of reporter
+    //   - status: string (required) - 'pending', 'reviewed'
+    //   - createdAt: timestamp (required) - Submission time
+    //
+    // Collection: suggestions
+    // Document ID: {suggestionId}
+    // Fields:
+    //   - category: string (required) - 'safety', 'health', 'improvement', 'other'
+    //   - subject: string (required, max 100) - Suggestion subject
+    //   - description: string (required, max 2000) - Suggestion description
+    //   - isAnonymous: bool (required) - Whether the suggestion is anonymous
+    //   - authorId: string (optional) - UID of author
+    //   - authorName: string (optional, max 100) - Name of author
+    //   - status: string (required) - 'received', 'in_review', 'implemented', 'dismissed'
+    //   - createdAt: timestamp (required) - Submission time
+    //
+    // Collection: medicalExams
+    // Document ID: {examId}
+    // Fields:
+    //   - workerId: string (optional) - UID of worker
+    //   - workerName: string (required, max 100) - Name of worker
+    //   - workerDni: string (optional, max 20) - DNI of worker
+    //   - examDate: string (required) - Date of exam
+    //   - nextExamDate: string (required) - Date of next exam
+    //   - result: string (required) - 'apto', 'apto_con_restricciones', 'no_apto'
+    //   - photoUrl: string (required) - URL to result photo
+    //   - companyRuc: string (required) - RUC of company
+    //   - createdAt: timestamp (required) - Creation time
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.uid;
+    }
+
+    function uidUnchanged() {
+      return !('uid' in request.resource.data) || request.resource.data.uid == request.auth.uid;
+    }
+
+    function uidNotModified() {
+      return !('uid' in request.resource.data) || request.resource.data.uid == resource.data.uid;
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return fields.hasAll(request.resource.data.keys());
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidUrl(url) {
+      return url is string && (url.matches("^https://.*") || url.matches("^http://.*")) && url.size() <= 1000;
+    }
+
+    // Role Checks
+    function isEmployer() {
+      return isAuthenticated() && 
+        (isDefaultAdmin() || (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', '') in ['employer', 'super_admin', 'gerencia', 'admin']));
+    }
+
+    function isWorker() {
+      return isAuthenticated() && 
+        !isDefaultAdmin() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', '') == 'worker';
+    }
+
+    function isSupervisor() {
+      return isAuthenticated() && 
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', '') == 'supervisor');
+    }
+
+    function isGlobalViewer() {
+      return isAuthenticated() && (
+        isDefaultAdmin() || (
+          exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', '') in ['super_admin', 'employer', 'gerencia']
+        )
+      );
+    }
+
+    function isEmployeeOf(companyRuc) {
+      return isAuthenticated() && 
+        (companyRuc == 'ALL' || companyRuc == '' || isGlobalViewer() || 
+         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('companyRuc', '') == companyRuc));
+    }
+
+    // Administradores principales: se reconocen solo por el correo verificado de
+    // su cuenta (token), nunca por el campo "email" del perfil, que escribe el usuario.
+    function isDefaultAdmin() {
+      return isAuthenticated() && (
+        (request.auth.token.get('email_verified', false) == true &&
+         (request.auth.token.get('email', '').lower() == "alexis9283alexis@gmail.com" ||
+          request.auth.token.get('email', '').lower() == "primiuny281@gmail.com")) ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', '') in ['super_admin', 'gerencia'])
+      );
+    }
+
+    // Domain Validators
+    function isValidUser() {
+      let data = request.resource.data;
+      return hasOnlyAllowedFields(['uid', 'email', 'displayName', 'role', 'dni', 'phoneNumber', 'department', 'position', 'createdAt', 'status', 'companyRuc', 'savedSignatureUrl', 'digitalSignatureConsent', 'hasVehicle', 'vehicleType', 'vehiclePlate', 'licenseFileUrl', 'licenseExpiryDate', 'soatFileUrl', 'soatExpiryDate', 'birthDate', 'gender', 'contractType', 'businessName', 'ruc', 'isTrustedPersonnel', 'economicActivity', 'address', 'totalWorkers']) &&
+             data.uid is string && data.uid == request.auth.uid &&
+             data.email is string && isValidEmail(data.email) &&
+             (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 100)) &&
+             (!('dni' in data) || (data.dni is string && data.dni.size() <= 20)) &&
+             (!('phoneNumber' in data) || (data.phoneNumber is string && data.phoneNumber.size() <= 20)) &&
+             (!('department' in data) || (data.department is string && data.department.size() <= 100)) &&
+             (!('position' in data) || (data.position is string && data.position.size() <= 100)) &&
+             (!('companyRuc' in data) || (data.companyRuc is string && data.companyRuc.size() <= 20)) &&
+             (!('hasVehicle' in data) || data.hasVehicle is bool) &&
+             (!('vehicleType' in data) || data.vehicleType is string) &&
+             (!('vehiclePlate' in data) || data.vehiclePlate is string) &&
+             (!('licenseFileUrl' in data) || data.licenseFileUrl is string) &&
+             (!('licenseExpiryDate' in data) || data.licenseExpiryDate is string) &&
+             (!('soatFileUrl' in data) || data.soatFileUrl is string) &&
+             (!('soatExpiryDate' in data) || data.soatExpiryDate is string) &&
+             data.role in ['employer', 'worker', 'supervisor', 'super_admin', 'gerencia'] &&
+             (!('status' in data) || data.status in ['active', 'blocked', 'cesado']) &&
+             (!('createdAt' in data) || data.createdAt is timestamp);
+    }
+
+    function isValidPost() {
+      let data = request.resource.data;
+      return hasOnlyAllowedFields(['title', 'content', 'authorId', 'authorName', 'type', 'reactions', 'comments', 'attachmentUrl', 'attachmentName', 'createdAt', 'readBy', 'companyRuc']) &&
+             data.title is string && data.title.size() > 0 && data.title.size() <= 100 &&
+             data.content is string && data.content.size() > 0 && data.content.size() <= 5000 &&
+             data.authorId is string &&
+             data.authorName is string && data.authorName.size() <= 100 &&
+             data.type in ['news', 'flyer', 'notice'] &&
+             (!('reactions' in data) || data.reactions is map) &&
+             (!('comments' in data) || data.comments is list) &&
+             (!('readBy' in data) || data.readBy is list) &&
+             (!('attachmentUrl' in data) || (data.attachmentUrl is string && data.attachmentUrl.size() <= 2000)) &&
+             (!('attachmentName' in data) || data.attachmentName is string) &&
+             data.companyRuc is string &&
+             data.createdAt is timestamp;
+    }
+
+    function isValidDocument() {
+      let data = request.resource.data;
+      return hasOnlyAllowedFields(['title', 'description', 'url', 'fileName', 'uploadedBy', 'createdAt', 'requiresSignature', 'signatures', 'signatureBase64', 'companyRuc', 'version', 'status', 'category', 'targetArea']) &&
+             data.title is string && data.title.size() > 0 && data.title.size() <= 100 &&
+             (!('description' in data) || (data.description is string && data.description.size() <= 2000)) &&
+             (isValidUrl(data.url) || (data.url is string && data.url.size() <= 2000)) &&
+             (!('fileName' in data) || data.fileName is string) &&
+             data.uploadedBy is string &&
+             (!('requiresSignature' in data) || data.requiresSignature is bool) &&
+             (!('signatures' in data) || data.signatures is list) &&
+             (!('signatureBase64' in data) || data.signatureBase64 is string) &&
+             data.companyRuc is string &&
+             (!('version' in data) || data.version is string) &&
+             (!('status' in data) || data.status in ['Vigente', 'Obsoleto']) &&
+             (!('category' in data) || data.category is string) &&
+             (!('targetArea' in data) || data.targetArea is string) &&
+             (!('createdAt' in data) || data.createdAt is timestamp);
+    }
+
+    function isValidReport() {
+      let data = request.resource.data;
+      return hasOnlyAllowedFields(['type', 'description', 'location', 'date', 'reportedBy', 'reportedByName', 'status', 'createdAt', 'attachmentUrl', 'attachmentName', 'attachmentUrls', 'comments', 'investigation', 'legalRegister', 'companyRuc']) &&
+             data.type in ['accident', 'incident', 'unsafe_act', 'unsafe_condition'] &&
+             data.description is string && data.description.size() > 0 && data.description.size() <= 2000 &&
+             data.location is string && data.location.size() > 0 && data.location.size() <= 200 &&
+             data.date is string && data.date.size() > 0 && data.date.size() <= 50 &&
+             data.reportedBy is string &&
+             data.reportedByName is string && data.reportedByName.size() <= 100 &&
+             data.status in ['pending', 'reviewed'] &&
+             (!('attachmentUrl' in data) || (data.attachmentUrl is string && data.attachmentUrl.size() <= 2000)) &&
+             (!('attachmentName' in data) || data.attachmentName is string) &&
+             (!('attachmentUrls' in data) || data.attachmentUrls is list) &&
+             (!('comments' in data) || data.comments is list) &&
+             (!('investigation' in data) || data.investigation is map) &&
+             (!('legalRegister' in data) || data.legalRegister is map) &&
+             data.companyRuc is string &&
+             data.createdAt is timestamp;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      // Users can read their own profile. Employers can read all profiles to see workers.
+      // Workers can read profiles of users in the same company.
+      allow read: if isAuthenticated();
+      
+      // A user can create their own profile. 
+      // Only the default admin can create an 'employer' role initially, or an existing employer can create another employer.
+      // A new user can default to 'worker' or 'supervisor' if they create it themselves.
+      allow create: if isAuthenticated() && isOwner(userId) && isValidUser() && 
+                    // El correo del perfil debe ser el de la cuenta, y nadie se asigna empresa solo
+                    request.resource.data.email == request.auth.token.get('email', '') &&
+                    request.resource.data.get('companyRuc', '') == '' &&
+                    (
+                      (request.resource.data.role in ['worker', 'supervisor']) || 
+                      isDefaultAdmin() || 
+                      isEmployer()
+                    );
+                    
+      // Users can update their own profile (except role/status). Employers/Admins can update roles and status.
+      allow update: if isAuthenticated() && uidNotModified() &&
+                    (!('createdAt' in resource.data) || !('createdAt' in request.resource.data) || request.resource.data.createdAt == resource.data.createdAt) &&
+                    (
+                      // User updating their own profile
+                      (isOwner(userId) && 
+                       request.resource.data.role == resource.data.role &&
+                       request.resource.data.get('status', 'active') == resource.data.get('status', 'active') &&
+                       hasOnlyAllowedFields(['uid', 'email', 'displayName', 'role', 'dni', 'phoneNumber', 'department', 'position', 'createdAt', 'status', 'companyRuc', 'savedSignatureUrl', 'digitalSignatureConsent', 'hasVehicle', 'vehicleType', 'vehiclePlate', 'licenseFileUrl', 'licenseExpiryDate', 'soatFileUrl', 'soatExpiryDate', 'birthDate', 'gender', 'contractType', 'businessName', 'ruc', 'isTrustedPersonnel', 'economicActivity', 'address', 'totalWorkers']) &&
+                       request.resource.data.email is string && isValidEmail(request.resource.data.email) &&
+                       (!('displayName' in request.resource.data) || (request.resource.data.displayName is string && request.resource.data.displayName.size() <= 100)) &&
+                       (!('dni' in request.resource.data) || (request.resource.data.dni is string && request.resource.data.dni.size() <= 20)) &&
+                       (!('phoneNumber' in request.resource.data) || (request.resource.data.phoneNumber is string && request.resource.data.phoneNumber.size() <= 20)) &&
+                       (!('department' in request.resource.data) || (request.resource.data.department is string && request.resource.data.department.size() <= 100)) &&
+                       (!('position' in request.resource.data) || (request.resource.data.position is string && request.resource.data.position.size() <= 100)) &&
+                       (!('hasVehicle' in request.resource.data) || request.resource.data.hasVehicle is bool) &&
+                       (!('vehicleType' in request.resource.data) || request.resource.data.vehicleType is string) &&
+                       (!('vehiclePlate' in request.resource.data) || request.resource.data.vehiclePlate is string) &&
+                       (!('licenseFileUrl' in request.resource.data) || request.resource.data.licenseFileUrl is string) &&
+                       (!('licenseExpiryDate' in request.resource.data) || request.resource.data.licenseExpiryDate is string) &&
+                       (!('soatFileUrl' in request.resource.data) || request.resource.data.soatFileUrl is string) &&
+                       (!('soatExpiryDate' in request.resource.data) || request.resource.data.soatExpiryDate is string) &&
+                       // El usuario no puede cambiar su correo ni su empresa (lo hace el administrador)
+                       request.resource.data.get('email', '') == resource.data.get('email', '') &&
+                       request.resource.data.get('companyRuc', '') == resource.data.get('companyRuc', '')
+                      ) ||
+                      // Employer updating another user's role, status, companyRuc or details
+                      (isEmployer() && request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'status', 'companyRuc', 'department', 'position', 'displayName', 'dni', 'isTrustedPersonnel', 'phoneNumber', 'birthDate', 'gender', 'contractType', 'businessName', 'economicActivity', 'address', 'totalWorkers', 'savedSignatureUrl'])) ||
+                      // Default admin updating another user's role, status, companyRuc or details
+                      (isDefaultAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'status', 'companyRuc', 'department', 'position', 'displayName', 'dni', 'isTrustedPersonnel', 'phoneNumber', 'birthDate', 'gender', 'contractType', 'businessName', 'economicActivity', 'address', 'totalWorkers', 'savedSignatureUrl']))
+                    );
+                    
+      // Employers can delete users
+      allow delete: if isEmployer() || isDefaultAdmin();
+    }
+
+    match /posts/{postId} {
+      // Everyone authenticated can read posts if they belong to the company
+      allow read: if isAuthenticated() && (isDefaultAdmin() || isEmployer() || isEmployeeOf(resource.data.get('companyRuc', '')));
+      // Only employers can create posts
+      allow create: if (isDefaultAdmin() || isEmployer()) && isValidPost() && request.resource.data.authorId == request.auth.uid;
+      // Only the author or another employer can update/delete, OR anyone can update reactions/comments/readBy
+      allow update: if ((isDefaultAdmin() || isEmployer()) && isValidPost() && 
+                    request.resource.data.authorId == resource.data.authorId) ||
+                    (isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions', 'comments', 'readBy']));
+      allow delete: if isDefaultAdmin() || isEmployer();
+    }
+
+    match /documents/{documentId} {
+      // Everyone authenticated can read documents if they belong to the company
+      allow read: if isAuthenticated() && (isDefaultAdmin() || isEmployer() || isEmployeeOf(resource.data.get('companyRuc', '')));
+      // Only employers can upload documents
+      allow create: if (isDefaultAdmin() || isEmployer()) && isValidDocument() && request.resource.data.uploadedBy == request.auth.uid;
+      // Employers can update everything, workers can only update signatures
+      allow update: if ((isDefaultAdmin() || isEmployer()) && (isValidDocument() || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'title', 'description', 'version', 'category', 'targetArea', 'signatures']))) ||
+                    (isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['signatures']));
+      allow delete: if isDefaultAdmin() || isEmployer();
+    }
+
+    match /reports/{reportId} {
+      // Workers can read their own reports. Employers can read reports for their company.
+      allow read: if isAuthenticated() && (isDefaultAdmin() || (isEmployer() && isEmployeeOf(resource.data.get('companyRuc', ''))) || resource.data.reportedBy == request.auth.uid);
+      // Workers can create reports.
+      allow create: if isAuthenticated() && (isWorker() || isEmployer() || isSupervisor() || isDefaultAdmin() || isGlobalViewer()) && isValidReport() && request.resource.data.status == 'pending' && request.resource.data.reportedBy == request.auth.uid && (isGlobalViewer() || isDefaultAdmin() || isEmployeeOf(request.resource.data.get('companyRuc', '')));
+      // Workers can update their own pending reports. Employers can update status, investigation, legalRegister. Anyone can comment.
+      allow update: if isAuthenticated() &&
+                    (
+                      (isWorker() && resource.data.reportedBy == request.auth.uid && resource.data.status == 'pending' && request.resource.data.status == 'pending') ||
+                      ((isEmployer() || isSupervisor() || isDefaultAdmin()) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'comments', 'investigation', 'legalRegister'])) ||
+                      (isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['comments']))
+                    );
+      // Employers and admins can delete reports. Workers can delete their own reports.
+      allow delete: if isDefaultAdmin() || (isEmployer() && isEmployeeOf(resource.data.get('companyRuc', ''))) || (isAuthenticated() && resource.data.reportedBy == request.auth.uid);
+    }
+
+    match /annual_activities/{activityId} {
+      allow read: if isAuthenticated() && (isDefaultAdmin() || isEmployeeOf(resource.data.get('companyRuc', '')));
+      allow create: if isAuthenticated() && (isEmployer() || isSupervisor() || isDefaultAdmin()) && (isGlobalViewer() || isDefaultAdmin() || isEmployeeOf(request.resource.data.get('companyRuc', '')));
+      allow update: if isAuthenticated() && (isEmployer() || isSupervisor() || isDefaultAdmin()) && (isGlobalViewer() || isDefaultAdmin() || isEmployeeOf(resource.data.get('companyRuc', '')));
+      allow delete: if isAuthenticated() && (isEmployer() || isSupervisor() || isDefaultAdmin()) && (isGlobalViewer() || isDefaultAdmin() || isEmployeeOf(resource.data.get('companyRuc', '')));
+    }
+
+    match /committee_meetings/{meetingId} {
+      allow read: if isAuthenticated() && (isDefaultAdmin() || isEmployeeOf(resource.data.get('companyRuc', '')));
+      allow create: if isAuthenticated() && (isEmployer() || isSupervisor() || isDefaultAdmin()) && (isGlobalViewer() || isDefaultAdmin() || isEmployeeOf(request.resource.data.get('companyRuc', '')));
+      allow update: if isAuthenticated() && (isEmployer() || isSupervisor() || isDefaultAdmin() || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['agreements'])) && (isGlobalViewer() || isDefaultAdmin() || isEmployeeOf(resource.data.get('companyRuc', '')));
+      allow delete: if isAuthenticated() && (isEmployer() || isSupervisor() || isDefaultAdmin()) && (isGlobalViewer() || isDefaultAdmin() || isEmployeeOf(resource.data.get('companyRuc', '')));
+    }
+
+    match /mandatory_registers/{registerId} {
+      allow read: if isAuthenticated() && (isEmployer() || isSupervisor() || isDefaultAdmin() || isGlobalViewer()) && (isGlobalViewer() || isDefaultAdmin() || isEmployeeOf(resource.data.get('companyRuc', '')));
+      allow create: if isAuthenticated() && (isEmployer() || isSupervisor() || isDefaultAdmin() || isGlobalViewer()) && (isGlobalViewer() || isDefaultAdmin() || isEmployeeOf(request.resource.data.get('companyRuc', '')));
+      allow update: if isAuthenticated() && (isEmployer() || isSupervisor() || isDefaultAdmin() || isGlobalViewer()) && (isGlobalViewer() || isDefaultAdmin() || isEmployeeOf(resource.data.get('companyRuc', '')));
+      allow delete: if isAuthenticated() && (isEmployer() || isSupervisor() || isDefaultAdmin() || isGlobalViewer()) && (isGlobalViewer() || isDefaultAdmin() || isEmployeeOf(resource.data.get('companyRuc', '')));
+    }
+
+    // ===============================================================
+    // New Collections: Trainings, Notifications, Emergency Contacts, Company Settings
+    // ===============================================================
+
+    match /company_settings/{settingId} {
+      allow read: if isAuthenticated();
+      allow write: if isDefaultAdmin() || isEmployer();
+    }
+
+    function isValidCompany() {
+      let data = request.resource.data;
+      return hasOnlyAllowedFields(['businessName', 'ruc', 'address', 'economicActivity', 'authorizedDnis', 'createdAt', 'areas']) &&
+             data.businessName is string && data.businessName.size() > 0 && data.businessName.size() <= 200 &&
+             data.ruc is string && data.ruc.size() == 11 &&
+             data.address is string && data.address.size() > 0 && data.address.size() <= 500 &&
+             data.economicActivity is string && data.economicActivity.size() > 0 && data.economicActivity.size() <= 200 &&
+             (!('authorizedDnis' in data) || data.authorizedDnis is list) &&
+             (!('areas' in data) || data.areas is list) &&
+             (!('createdAt' in data) || data.createdAt is timestamp);
+    }
+
+    match /companies/{companyId} {
+      allow read: if isGlobalViewer() || (isAuthenticated() && isEmployeeOf(resource.data.get('ruc', '')));
+      allow create: if (isEmployer() || isDefaultAdmin()) && isValidCompany();
+      allow update: if (isEmployer() || isDefaultAdmin()) && (isDefaultAdmin() || isEmployeeOf(resource.data.get('ruc', ''))) &&
+                    isValidCompany();
+      allow delete: if (isEmployer() || isDefaultAdmin()) && (isDefaultAdmin() || isEmployeeOf(resource.data.get('ruc', '')));
+    }
+
+    match /invitations/{dni} {
+      // Anyone authenticated can check an invitation by DNI (get), but cannot list them.
+      allow get: if isAuthenticated();
+      allow list: if false;
+      // Only employers can manage invitations.
+      allow create, update, delete: if isDefaultAdmin() || isEmployer();
+    }
+
+    function isValidTraining() {
+      let data = request.resource.data;
+      return hasOnlyAllowedFields(['title', 'description', 'videoUrl', 'materialUrl', 'materialName', 'createdBy', 'completedBy', 'completions', 'createdAt', 'quiz', 'signatureBase64', 'companyRuc', 'targetArea', 'category', 'validityMonths', 'dueDate', 'status', 'authorName', 'authorEmail', 'updatedAt']) &&
+             data.title is string && data.title.size() > 0 && data.title.size() <= 300 &&
+             (!('description' in data) || (data.description is string && data.description.size() <= 10000)) &&
+             (!('videoUrl' in data) || data.videoUrl is string) &&
+             (!('materialUrl' in data) || data.materialUrl is string) &&
+             (!('materialName' in data) || (data.materialName is string && data.materialName.size() <= 500)) &&
+             (!('createdBy' in data) || data.createdBy is string) &&
+             (!('completedBy' in data) || data.completedBy is list) &&
+             (!('completions' in data) || data.completions is list) &&
+             (!('quiz' in data) || data.quiz is map) &&
+             (!('signatureBase64' in data) || data.signatureBase64 is string) &&
+             (!('companyRuc' in data) || data.companyRuc is string) &&
+             (!('targetArea' in data) || (data.targetArea is string && data.targetArea.size() <= 200)) &&
+             (!('category' in data) || (data.category is string && data.category.size() <= 200)) &&
+             (!('validityMonths' in data) || data.validityMonths is number) &&
+             (!('dueDate' in data) || data.dueDate is timestamp || data.dueDate is string) &&
+             (!('status' in data) || data.status in ['active', 'archived']) &&
+             (!('createdAt' in data) || data.createdAt is timestamp);
+    }
+
+    match /trainings/{trainingId} {
+      allow read: if isAuthenticated();
+      allow create: if (isEmployer() || isSupervisor() || isDefaultAdmin()) && isValidTraining();
+      allow update: if ((isEmployer() || isSupervisor() || isDefaultAdmin()) && isValidTraining() && 
+                        (request.resource.data.get('createdBy', '') == resource.data.get('createdBy', '') || !('createdBy' in resource.data) || isDefaultAdmin())) ||
+                    (isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['completedBy', 'completions']));
+      allow delete: if isEmployer() || isSupervisor() || isDefaultAdmin();
+    }
+
+    function isValidNotification() {
+      let data = request.resource.data;
+      return hasOnlyAllowedFields(['userId', 'companyRuc', 'title', 'message', 'read', 'link', 'createdAt', 'targetId']) &&
+             data.userId is string &&
+             (!('companyRuc' in data) || data.companyRuc is string) &&
+             data.title is string && data.title.size() > 0 && data.title.size() <= 100 &&
+             data.message is string && data.message.size() > 0 && data.message.size() <= 500 &&
+             data.read is bool &&
+             (!('link' in data) || (data.link is string && data.link.size() <= 500)) &&
+             (!('targetId' in data) || (data.targetId is string && data.targetId.size() <= 100)) &&
+             data.createdAt is timestamp;
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || (isEmployer() && isEmployeeOf(resource.data.get('companyRuc', ''))));
+      allow create: if isAuthenticated() && isValidNotification();
+      allow update: if isAuthenticated() && (resource.data.userId == request.auth.uid || (isEmployer() && isEmployeeOf(resource.data.get('companyRuc', '')))) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+      allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || (isEmployer() && isEmployeeOf(resource.data.get('companyRuc', ''))));
+    }
+
+    function isValidEmergencyContact() {
+      let data = request.resource.data;
+      return hasOnlyAllowedFields(['name', 'phone', 'description', 'type', 'createdAt', 'companyRuc']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.phone is string && data.phone.size() > 0 && data.phone.size() <= 50 &&
+             (!('description' in data) || data.description is string && data.description.size() <= 500) &&
+             data.type in ['hospital', 'fire', 'police', 'internal'] &&
+             (!('companyRuc' in data) || data.companyRuc is string && data.companyRuc.size() <= 20) &&
+             data.createdAt is timestamp;
+    }
+
+    match /emergency_contacts/{contactId} {
+      allow read: if isAuthenticated();
+      allow create: if (isDefaultAdmin() || isEmployer()) && isValidEmergencyContact();
+      allow update: if (isDefaultAdmin() || isEmployer()) && isValidEmergencyContact();
+      allow delete: if isDefaultAdmin() || isEmployer();
+    }
+
+    function isValidInspectionTemplate() {
+      let data = request.resource.data;
+      return hasOnlyAllowedFields(['title', 'description', 'items', 'createdBy', 'createdAt', 'companyRuc', 'isGlobal']) &&
+             data.title is string && data.title.size() > 0 && data.title.size() <= 200 &&
+             data.description is string && data.description.size() <= 2000 &&
+             data.items is list &&
+             data.createdBy is string && (data.createdBy == request.auth.uid || isEmployer() || isDefaultAdmin()) &&
+             (!('companyRuc' in data) || data.companyRuc is string && data.companyRuc.size() <= 20) &&
+             (!('isGlobal' in data) || data.isGlobal is bool) &&
+             data.createdAt is timestamp;
+    }
+
+    match /inspection_templates/{templateId} {
+      allow read: if isAuthenticated();
+      allow create: if (isEmployer() || isDefaultAdmin()) && isValidInspectionTemplate();
+      allow update: if (isEmployer() || isDefaultAdmin()) && isValidInspectionTemplate();
+      allow delete: if isEmployer() || isDefaultAdmin();
+    }
+
+    function isValidInspection() {
+      let data = request.resource.data;
+      return hasOnlyAllowedFields(['templateId', 'templateTitle', 'workerId', 'workerName', 'workerDni', 'workerEmail', 'results', 'signatureUrl', 'signatureBase64', 'hasIssues', 'status', 'createdAt', 'attachmentUrls', 'companyRuc', 'equipmentId', 'equipmentName']) &&
+             data.templateId is string &&
+             data.templateTitle is string &&
+             data.workerId is string && data.workerId == request.auth.uid &&
+             data.workerName is string &&
+             (!('workerDni' in data) || (data.workerDni is string && data.workerDni.size() <= 20)) &&
+             (!('workerEmail' in data) || data.workerEmail is string) &&
+             (!('companyRuc' in data) || data.companyRuc is string) &&
+             (!('equipmentId' in data) || data.equipmentId is string) &&
+             (!('equipmentName' in data) || data.equipmentName is string) &&
+             data.results is list &&
+             data.signatureUrl is string &&
+             (!('signatureBase64' in data) || data.signatureBase64 is string) &&
+             data.hasIssues is bool &&
+             data.status in ['pending_review', 'reviewed', 'pending_supervisor'] &&
+             (!('attachmentUrls' in data) || data.attachmentUrls is list) &&
+             data.createdAt is timestamp;
+    }
+
+    match /inspections/{inspectionId} {
+      allow read: if isAuthenticated() && (resource.data.workerId == request.auth.uid || isGlobalViewer() || isSupervisor() || isDefaultAdmin());
+      allow create: if (isWorker() || isEmployer() || isSupervisor() || isDefaultAdmin()) && isValidInspection() && request.resource.data.status in ['pending_review', 'pending_supervisor'];
+      allow update: if (isEmployer() || isSupervisor() || isDefaultAdmin()) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'supervisorSignatureUrl', 'supervisorName', 'supervisorId', 'supervisorDni']) && request.resource.data.status == 'reviewed';
+      allow delete: if isEmployer() || isDefaultAdmin() || (isAuthenticated() && resource.data.workerId == request.auth.uid && resource.data.status == 'pending_review');
+    }
+
+    function isValidSuggestion() {
+      let data = request.resource.data;
+      return hasOnlyAllowedFields(['category', 'subject', 'description', 'isAnonymous', 'authorId', 'authorName', 'attachmentUrl', 'status', 'adminComment', 'createdAt', 'companyRuc']) &&
+             data.category in ['safety', 'health', 'improvement', 'other'] &&
+             data.subject is string && data.subject.size() > 0 && data.subject.size() <= 100 &&
+             data.description is string && data.description.size() > 0 && data.description.size() <= 2000 &&
+             data.isAnonymous is bool &&
+             (!('authorId' in data) || data.authorId is string) &&
+             (!('authorName' in data) || data.authorName is string && data.authorName.size() <= 100) &&
+             (!('attachmentUrl' in data) || (data.attachmentUrl is string && data.attachmentUrl.size() <= 2000)) &&
+             data.status in ['received', 'in_review', 'implemented', 'dismissed'] &&
+             (!('adminComment' in data) || data.adminComment is string && data.adminComment.size() <= 1000) &&
+             data.createdAt is timestamp &&
+             data.companyRuc is string && data.companyRuc.size() <= 20;
+    }
+
+    match /suggestions/{suggestionId} {
+      // Admins see all for their companies. Workers see their own if not anonymous.
+      allow read: if isDefaultAdmin() || (isEmployer() && isEmployeeOf(resource.data.get('companyRuc', ''))) || (isAuthenticated() && resource.data.get('authorId', '') == request.auth.uid);
+      // Anyone authenticated can create for their company.
+      allow create: if isAuthenticated() && isValidSuggestion() && 
+                    isEmployeeOf(request.resource.data.companyRuc) &&
+                    (request.resource.data.isAnonymous == true || request.resource.data.authorId == request.auth.uid);
+      // Only admins can update status and comments.
+      allow update: if (isDefaultAdmin() || (isEmployer() && isEmployeeOf(resource.data.get('companyRuc', '')))) && isValidSuggestion() && 
+                    request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'adminComment']);
+      allow delete: if isDefaultAdmin() || (isEmployer() && isEmployeeOf(resource.data.get('companyRuc', ''))) || (isAuthenticated() && resource.data.get('authorId', '') == request.auth.uid && resource.data.status == 'received');
+    }
+
+    function isValidHealthCard() {
+      let data = request.resource.data;
+      return hasOnlyAllowedFields(['workerId', 'workerName', 'workerDni', 'issueDate', 'expirationDate', 'photoUrl', 'companyRuc', 'createdAt']) &&
+             (!('workerId' in data) || data.workerId is string) &&
+             data.workerName is string && data.workerName.size() > 0 && data.workerName.size() <= 100 &&
+             (!('workerDni' in data) || (data.workerDni is string && data.workerDni.size() <= 20)) &&
+             data.issueDate is string && data.issueDate.size() <= 20 &&
+             data.expirationDate is string && data.expirationDate.size() <= 20 &&
+             (isValidUrl(data.photoUrl) || (data.photoUrl is string && data.photoUrl.size() <= 2000)) &&
+             data.companyRuc is string && data.companyRuc.size() <= 20 &&
+             data.createdAt is timestamp;
+    }
+
+    function isValidMedicalExam() {
+      let data = request.resource.data;
+      return hasOnlyAllowedFields(['workerId', 'workerName', 'workerDni', 'examDate', 'nextExamDate', 'result', 'restrictions', 'recommendations', 'photoUrl', 'companyRuc', 'createdAt', 'workerSignatureUrl', 'signedAt', 'status']) &&
+             (!('workerId' in data) || data.workerId is string) &&
+             data.workerName is string && data.workerName.size() > 0 && data.workerName.size() <= 100 &&
+             (!('workerDni' in data) || (data.workerDni is string && data.workerDni.size() <= 20)) &&
+             data.examDate is string && data.examDate.size() <= 20 &&
+             data.nextExamDate is string && data.nextExamDate.size() <= 20 &&
+             data.result in ['apto', 'apto_con_restricciones', 'no_apto'] &&
+             (!('restrictions' in data) || data.restrictions is string) &&
+             (!('recommendations' in data) || data.recommendations is string) &&
+             (isValidUrl(data.photoUrl) || (data.photoUrl is string && data.photoUrl.size() <= 2000)) &&
+             data.companyRuc is string && data.companyRuc.size() <= 20 &&
+             (!('workerSignatureUrl' in data) || data.workerSignatureUrl is string) &&
+             (!('signedAt' in data) || data.signedAt is timestamp) &&
+             (!('status' in data) || data.status in ['pending_signature', 'signed']) &&
+             data.createdAt is timestamp;
+    }
+
+    match /healthCards/{cardId} {
+      allow read: if isDefaultAdmin() || isSupervisor() || isGlobalViewer() || (isEmployer() && isEmployeeOf(resource.data.get('companyRuc', ''))) || (isAuthenticated() && resource.data.get('workerId', '') == request.auth.uid);
+      allow create: if (isDefaultAdmin() || (isEmployer() && isEmployeeOf(request.resource.data.companyRuc)) || (isAuthenticated() && request.resource.data.workerId == request.auth.uid && isEmployeeOf(request.resource.data.companyRuc))) && isValidHealthCard();
+      allow update: if (isDefaultAdmin() || (isEmployer() && isEmployeeOf(request.resource.data.companyRuc)) || (isAuthenticated() && resource.data.get('workerId', '') == request.auth.uid && request.resource.data.workerId == request.auth.uid)) && isValidHealthCard();
+      allow delete: if isDefaultAdmin() || (isEmployer() && isEmployeeOf(resource.data.get('companyRuc', ''))) || (isAuthenticated() && resource.data.get('workerId', '') == request.auth.uid);
+    }
+
+    match /medicalExams/{examId} {
+      allow read: if isDefaultAdmin() || isSupervisor() || isGlobalViewer() || (isEmployer() && isEmployeeOf(resource.data.get('companyRuc', ''))) || 
+                     (isAuthenticated() && (resource.data.get('workerId', '') == request.auth.uid || (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && resource.data.get('workerDni', '') != '' && resource.data.get('workerDni', '') == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('dni', ''))));
+      allow create: if (isDefaultAdmin() || (isEmployer() && isEmployeeOf(request.resource.data.companyRuc)) || (isAuthenticated() && request.resource.data.workerId == request.auth.uid && isEmployeeOf(request.resource.data.companyRuc))) && isValidMedicalExam();
+      allow update: if (isDefaultAdmin() || (isEmployer() && isEmployeeOf(request.resource.data.companyRuc)) || (isAuthenticated() && (resource.data.get('workerId', '') == request.auth.uid || resource.data.get('workerId', '') == '' || (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && resource.data.get('workerDni', '') != '' && resource.data.get('workerDni', '') == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('dni', ''))))) && isValidMedicalExam();
+      allow delete: if isDefaultAdmin() || (isEmployer() && isEmployeeOf(resource.data.get('companyRuc', '')));
+    }
+
+    match /epp_catalog/{eppId} {
+      allow read: if isAuthenticated();
+      allow write: if isDefaultAdmin() || isEmployer() || isSupervisor();
+    }
+
+    match /epp_deliveries/{deliveryId} {
+      // Administradores y supervisores gestionan las entregas; el trabajador solo
+      // ve las suyas y solo puede firmarlas (firma y estado).
+      allow read: if isAuthenticated() &&
+                     (isDefaultAdmin() || isGlobalViewer() || isSupervisor() ||
+                      resource.data.get('workerId', '') == request.auth.uid);
+      allow create, delete: if isDefaultAdmin() || isGlobalViewer() || isSupervisor();
+      allow update: if isDefaultAdmin() || isGlobalViewer() || isSupervisor() ||
+                       (isAuthenticated() &&
+                        resource.data.get('workerId', '') == request.auth.uid &&
+                        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['signature', 'status']));
+    }
+
+    match /corrective_actions/{actionId} {
+      allow read: if isAuthenticated() && (isDefaultAdmin() || isEmployer() || isSupervisor() || isGlobalViewer() || resource.data.get('assignedToUid', '') == request.auth.uid || isEmployeeOf(resource.data.get('companyRuc', '')));
+      allow create: if isAuthenticated() && (isDefaultAdmin() || isEmployer() || isSupervisor() || request.resource.data.get('assignedToUid', '') == request.auth.uid);
+      allow update: if isAuthenticated() && (isDefaultAdmin() || isEmployer() || isSupervisor() || resource.data.get('assignedToUid', '') == request.auth.uid);
+      allow delete: if isDefaultAdmin() || isEmployer() || isSupervisor();
+    }
+
+    match /equipment/{equipmentId} {
+      allow read: if isAuthenticated() && (isDefaultAdmin() || isEmployer() || isSupervisor() || isGlobalViewer() || isEmployeeOf(resource.data.get('companyRuc', '')));
+      allow create: if isAuthenticated() && (isDefaultAdmin() || isEmployer() || isSupervisor());
+      allow update: if isAuthenticated() && (isDefaultAdmin() || isEmployer() || isSupervisor() || isEmployeeOf(resource.data.get('companyRuc', '')));
+      allow delete: if isAuthenticated() && (isDefaultAdmin() || isEmployer() || isSupervisor());
+    }
+
+    match /preuse_inspections/{inspectionId} {
+      allow read: if isAuthenticated() && (isDefaultAdmin() || isEmployer() || isSupervisor() || isGlobalViewer() || isEmployeeOf(resource.data.get('companyRuc', '')) || resource.data.get('workerId', '') == request.auth.uid);
+      allow create: if isAuthenticated() && (isDefaultAdmin() || isGlobalViewer() || isEmployeeOf(request.resource.data.get('companyRuc', '')) || request.resource.data.get('companyRuc', '') == '');
+      allow update: if isDefaultAdmin() || isEmployer() || isSupervisor();
+      allow delete: if isDefaultAdmin() || isEmployer() || isSupervisor();
+    }
+
+    function isValidIperc() {
+      let data = request.resource.data;
+      return hasOnlyAllowedFields(['companyRuc', 'jobPosition', 'activity', 'hazard', 'risk', 'probability', 'severity', 'riskScore', 'riskLevel', 'controlMeasures', 'createdBy', 'createdAt']) &&
+             data.companyRuc is string &&
+             data.jobPosition is string &&
+             data.activity is string &&
+             data.hazard is string &&
+             data.risk is string &&
+             data.probability is number &&
+             data.severity is number &&
+             data.riskScore is number &&
+             data.riskLevel is string &&
+             data.controlMeasures is string &&
+             data.createdBy is string &&
+             data.createdAt is timestamp;
+    }
+
+    match /iperc_matrix/{riskId} {
+      allow read: if isAuthenticated() && (isDefaultAdmin() || isEmployer() || isSupervisor() || isGlobalViewer() || isEmployeeOf(resource.data.get('companyRuc', '')));
+      allow create: if isAuthenticated() && (isDefaultAdmin() || isEmployer() || isSupervisor() || isGlobalViewer() || request.auth.uid != null) && isValidIperc();
+      allow update: if isAuthenticated() && (isDefaultAdmin() || isEmployer() || isSupervisor()) && isValidIperc();
+      allow delete: if isAuthenticated() && (isDefaultAdmin() || isEmployer() || isSupervisor());
+    }
+
+    match /sst_statistics/{statId} {
+      allow read: if isAuthenticated() && (isDefaultAdmin() || isEmployer() || isSupervisor() || isGlobalViewer() || isEmployeeOf(resource.data.get('companyRuc', '')));
+      allow create: if isAuthenticated() && (isDefaultAdmin() || isEmployer() || isSupervisor());
+      allow update: if isAuthenticated() && (isDefaultAdmin() || isEmployer() || isSupervisor());
+      allow delete: if isAuthenticated() && (isDefaultAdmin() || isEmployer() || isSupervisor());
+    }
+
+    match /inductions/{inductionId} {
+      allow read: if isAuthenticated() && (isDefaultAdmin() || isEmployer() || isSupervisor() || isGlobalViewer() || resource.data.get('workerId', '') == request.auth.uid || isEmployeeOf(resource.data.get('companyRuc', '')));
+      allow create: if isAuthenticated() && (isDefaultAdmin() || isEmployer() || isSupervisor());
+      allow update: if isAuthenticated() && (isDefaultAdmin() || isEmployer() || isSupervisor() || resource.data.get('workerId', '') == request.auth.uid);
+      allow delete: if isAuthenticated() && (isDefaultAdmin() || isEmployer() || isSupervisor());
+    }
+
+    function isValidMedicalLeave() {
+      let data = request.resource.data;
+      return hasOnlyAllowedFields(['companyRuc', 'workerId', 'workerName', 'workerDni', 'startDate', 'endDate', 'daysLost', 'cie10Code', 'diagnosis', 'type', 'attachmentUrl', 'attachmentName', 'status', 'notes', 'recordedBy', 'createdAt']) &&
+             data.companyRuc is string &&
+             (!('workerId' in data) || data.workerId is string) &&
+             data.workerName is string &&
+             (!('workerDni' in data) || data.workerDni is string) &&
+             data.startDate is string &&
+             data.endDate is string &&
+             data.daysLost is number &&
+             (!('cie10Code' in data) || data.cie10Code is string) &&
+             data.diagnosis is string &&
+             data.type in ['Enfermedad Común', 'Enfermedad Ocupacional', 'Accidente de Trabajo', 'Accidente Común', 'Maternidad', 'Paternidad', 'Otros'] &&
+             (!('attachmentUrl' in data) || data.attachmentUrl is string) &&
+             (!('attachmentName' in data) || data.attachmentName is string) &&
+             data.status in ['Aprobado', 'Pendiente', 'Rechazado'] &&
+             (!('notes' in data) || data.notes is string) &&
+             (!('recordedBy' in data) || data.recordedBy is string) &&
+             (!('createdAt' in data) || data.createdAt is timestamp);
+    }
+
+    match /medical_leaves/{leaveId} {
+      allow read: if isAuthenticated() && (isDefaultAdmin() || isEmployer() || isSupervisor() || isGlobalViewer() || isEmployeeOf(resource.data.get('companyRuc', '')) || resource.data.workerId == request.auth.uid);
+      allow create: if isAuthenticated() && isValidMedicalLeave();
+      allow update: if isAuthenticated() && (isDefaultAdmin() || isEmployer() || isSupervisor());
+      allow delete: if isAuthenticated() && (isDefaultAdmin() || isEmployer());
+    }
+
+    match /drills/{drillId} {
+      allow read: if isAuthenticated() && (isDefaultAdmin() || isEmployer() || isEmployeeOf(resource.data.get('companyRuc', '')));
+      allow write: if isAuthenticated() && (isDefaultAdmin() || isEmployer());
+    }
+
+    match /brigade_members/{memberId} {
+      allow read: if isAuthenticated() && (isDefaultAdmin() || isEmployer() || isEmployeeOf(resource.data.get('companyRuc', '')));
+      allow write: if isAuthenticated() && (isDefaultAdmin() || isEmployer());
+    }
+
+    match /audits/{auditId} {
+      allow read: if isAuthenticated() && (isDefaultAdmin() || isEmployer() || isEmployeeOf(resource.data.get('companyRuc', '')));
+      allow write: if isAuthenticated() && (isDefaultAdmin() || isEmployer());
+    }
+
+    function isValidInventoryItem() {
+      let data = request.resource.data;
+      return hasOnlyAllowedFields(['companyRuc', 'name', 'internalCode', 'category', 'location', 'area', 'stock', 'minimumStock', 'status', 'description', 'nextMaintenanceDate', 'photoUrl', 'createdAt']) &&
+             data.companyRuc is string &&
+             data.name is string && data.name.size() > 0 &&
+             (!('internalCode' in data) || data.internalCode is string) &&
+             data.category is string && data.category.size() > 0 && data.category.size() <= 100 &&
+             data.location is string &&
+             (!('area' in data) || data.area is string) &&
+             data.stock is number &&
+             data.minimumStock is number &&
+             data.status in ['active', 'inactive', 'maintenance'] &&
+             (!('description' in data) || data.description is string) &&
+             (!('nextMaintenanceDate' in data) || data.nextMaintenanceDate is string) &&
+             (!('photoUrl' in data) || data.photoUrl is string) &&
+             (!('createdAt' in data) || data.createdAt is timestamp);
+    }
+
+    match /election_roll/{rollId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && (isDefaultAdmin() || isEmployer());
+    }
+
+    match /committee_elections/{electionId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+    
+    match /committee_members/{memberId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && (isDefaultAdmin() || isEmployer() || isSupervisor());
+    }
+    match /committee_events/{eventId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && (isDefaultAdmin() || isEmployer() || isSupervisor());
+    }
+
+    match /managementMeetings/{meetingId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && (isDefaultAdmin() || isEmployer() || isSupervisor());
+    }
+    match /managementAgreements/{agreementId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && (isDefaultAdmin() || isEmployer() || isSupervisor() || resource.data.get('assignedToId', '') == request.auth.uid || request.resource.data.get('assignedToId', '') == request.auth.uid || resource.data.get('responsibleId', '') == request.auth.uid || request.resource.data.get('responsibleId', '') == request.auth.uid);
+    }
+
+    match /inventory_items/{itemId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() && (isDefaultAdmin() || isEmployer() || isSupervisor()) && isValidInventoryItem();
+      allow delete: if isAuthenticated() && (isDefaultAdmin() || isEmployer() || isSupervisor());
+    }
+  }
+}
+

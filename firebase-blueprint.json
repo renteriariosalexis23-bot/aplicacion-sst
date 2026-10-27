@@ -1,0 +1,651 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Represents a user in the system (Employer or Worker).",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "The unique identifier of the user."
+        },
+        "email": {
+          "type": "string",
+          "description": "The email address of the user."
+        },
+        "displayName": {
+          "type": "string",
+          "description": "The display name of the user."
+        },
+        "role": {
+          "type": "string",
+          "enum": ["employer", "worker", "supervisor", "super_admin", "gerencia"],
+          "description": "The role of the user."
+        },
+        "hasVehicle": {
+          "type": "boolean",
+          "description": "Whether the user has a vehicle."
+        },
+        "vehicleType": {
+          "type": "string",
+          "description": "The type of the vehicle (e.g. car, motorcycle, truck)."
+        },
+        "vehiclePlate": {
+          "type": "string",
+          "description": "The plate code of the vehicle."
+        },
+        "licenseFileUrl": {
+          "type": "string",
+          "description": "The URL of the driver's license document photo or file."
+        },
+        "licenseExpiryDate": {
+          "type": "string",
+          "description": "The driver's license expiration date."
+        },
+        "soatFileUrl": {
+          "type": "string",
+          "description": "The URL of the SOAT document photo or file."
+        },
+        "soatExpiryDate": {
+          "type": "string",
+          "description": "The SOAT expiration date."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The time the user was created."
+        }
+      },
+      "required": ["uid", "email", "role", "createdAt"]
+    },
+    "Post": {
+      "title": "Post",
+      "description": "A news post, flyer, or notice published by the employer.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "The title of the post." },
+        "content": {
+          "type": "string",
+          "description": "The content of the post."
+        },
+        "authorId": {
+          "type": "string",
+          "description": "The UID of the employer who created the post."
+        },
+        "authorName": {
+          "type": "string",
+          "description": "The name of the employer who created the post."
+        },
+        "type": {
+          "type": "string",
+          "enum": ["news", "flyer", "notice"],
+          "description": "The type of the post."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The time the post was created."
+        }
+      },
+      "required": [
+        "title",
+        "content",
+        "authorId",
+        "authorName",
+        "type",
+        "createdAt"
+      ]
+    },
+    "Document": {
+      "title": "Document",
+      "description": "An official SST document uploaded by the employer.",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "The title of the document."
+        },
+        "description": {
+          "type": "string",
+          "description": "A brief description of the document."
+        },
+        "url": {
+          "type": "string",
+          "description": "The URL to download or view the document."
+        },
+        "uploadedBy": {
+          "type": "string",
+          "description": "The UID of the employer who uploaded the document."
+        },
+        "requiresSignature": {
+          "type": "boolean",
+          "description": "Whether the document requires a signature."
+        },
+        "signatures": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "userId": { "type": "string" },
+              "userName": { "type": "string" },
+              "signatureUrl": { "type": "string" },
+              "timestamp": { "type": "string", "format": "date-time" }
+            }
+          }
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The time the document was uploaded."
+        }
+      },
+      "required": ["title", "description", "url", "uploadedBy", "createdAt"]
+    },
+    "Report": {
+      "title": "Report",
+      "description": "A report of an SST event submitted by a worker.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["accident", "incident", "unsafe_act", "unsafe_condition"],
+          "description": "The type of the report."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the event."
+        },
+        "location": {
+          "type": "string",
+          "description": "The location where the event occurred."
+        },
+        "date": { "type": "string", "description": "The date of the event." },
+        "reportedBy": {
+          "type": "string",
+          "description": "The UID of the worker who submitted the report."
+        },
+        "reportedByName": {
+          "type": "string",
+          "description": "The name of the worker who submitted the report."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "reviewed"],
+          "description": "The status of the report."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The time the report was submitted."
+        }
+      },
+      "required": [
+        "type",
+        "description",
+        "location",
+        "date",
+        "reportedBy",
+        "reportedByName",
+        "status",
+        "createdAt"
+      ]
+    },
+    "Suggestion": {
+      "title": "Suggestion",
+      "description": "An anonymous or identified suggestion for SST improvements.",
+      "type": "object",
+      "properties": {
+        "category": {
+          "type": "string",
+          "enum": ["safety", "health", "improvement", "other"]
+        },
+        "subject": { "type": "string" },
+        "description": { "type": "string" },
+        "isAnonymous": { "type": "boolean" },
+        "authorId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "status": {
+          "type": "string",
+          "enum": ["received", "in_review", "implemented", "dismissed"]
+        },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "category",
+        "subject",
+        "description",
+        "isAnonymous",
+        "status",
+        "createdAt"
+      ]
+    },
+    "Company": {
+      "title": "Company",
+      "description": "Represents a company in the system.",
+      "type": "object",
+      "properties": {
+        "businessName": {
+          "type": "string",
+          "description": "The legal name of the company."
+        },
+        "ruc": {
+          "type": "string",
+          "description": "The RUC (tax ID) of the company."
+        },
+        "address": {
+          "type": "string",
+          "description": "The physical address of the company."
+        },
+        "economicActivity": {
+          "type": "string",
+          "description": "The main economic activity of the company."
+        },
+        "authorizedDnis": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of DNIs authorized to join this company."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The time the company was created."
+        }
+      },
+      "required": [
+        "businessName",
+        "ruc",
+        "address",
+        "economicActivity",
+        "createdAt"
+      ]
+    },
+    "HealthCard": {
+      "title": "HealthCard",
+      "description": "A health card (carnet de sanidad) for a worker.",
+      "type": "object",
+      "properties": {
+        "workerId": { "type": "string" },
+        "workerName": { "type": "string" },
+        "workerDni": { "type": "string" },
+        "issueDate": { "type": "string", "format": "date" },
+        "expirationDate": { "type": "string", "format": "date" },
+        "photoUrl": { "type": "string" },
+        "companyRuc": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "workerName",
+        "issueDate",
+        "expirationDate",
+        "photoUrl",
+        "companyRuc",
+        "createdAt"
+      ]
+    },
+    "MedicalExam": {
+      "title": "MedicalExam",
+      "description": "An occupational medical exam for a worker.",
+      "type": "object",
+      "properties": {
+        "workerId": { "type": "string" },
+        "workerName": { "type": "string" },
+        "workerDni": { "type": "string" },
+        "examDate": { "type": "string", "format": "date" },
+        "nextExamDate": { "type": "string", "format": "date" },
+        "result": {
+          "type": "string",
+          "enum": ["apto", "apto_con_restricciones", "no_apto"]
+        },
+        "photoUrl": { "type": "string" },
+        "companyRuc": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "workerName",
+        "examDate",
+        "nextExamDate",
+        "result",
+        "photoUrl",
+        "companyRuc",
+        "createdAt"
+      ]
+    },
+    "EppItem": {
+      "title": "EppItem",
+      "description": "Represents an EPP item in the catalog.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "estimatedLifeMonths": { "type": "number" },
+        "stock": { "type": "number", "description": "Current inventory stock" },
+        "companyRuc": { "type": "string" },
+        "photoUrl": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "name",
+        "description",
+        "estimatedLifeMonths",
+        "stock",
+        "companyRuc",
+        "createdAt"
+      ]
+    },
+    "EppDelivery": {
+      "title": "EppDelivery",
+      "description": "Record of EPP items delivered to a worker.",
+      "type": "object",
+      "properties": {
+        "companyRuc": { "type": "string" },
+        "workerId": { "type": "string" },
+        "workerName": { "type": "string" },
+        "workerDni": { "type": "string" },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "eppId": { "type": "string" },
+              "name": { "type": "string" },
+              "quantity": { "type": "number" },
+              "reason": { "type": "string" }
+            }
+          }
+        },
+        "signature": { "type": "string" },
+        "deliveryDate": { "type": "string", "format": "date-time" },
+        "supervisorId": { "type": "string" },
+        "supervisorName": { "type": "string" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "companyRuc",
+        "workerName",
+        "workerDni",
+        "items",
+        "signature",
+        "deliveryDate",
+        "supervisorId",
+        "supervisorName",
+        "createdAt"
+      ]
+    },
+    "CorrectiveAction": {
+      "title": "CorrectiveAction",
+      "description": "Represents a corrective action or task ticket.",
+      "type": "object",
+      "properties": {
+        "companyRuc": { "type": "string" },
+        "sourceType": {
+          "type": "string",
+          "enum": ["inspection", "report", "preuse", "manual"]
+        },
+        "sourceId": { "type": "string" },
+        "description": { "type": "string" },
+        "assignedToUid": { "type": "string" },
+        "assignedToName": { "type": "string" },
+        "assignedByUid": { "type": "string" },
+        "deadline": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["pending", "resolved"] },
+        "resolutionNotes": { "type": "string" },
+        "resolutionPhotoUrl": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "resolvedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "companyRuc",
+        "sourceType",
+        "description",
+        "assignedToUid",
+        "assignedToName",
+        "assignedByUid",
+        "deadline",
+        "status",
+        "createdAt"
+      ]
+    },
+    "Equipment": {
+      "title": "Equipment",
+      "description": "Represents an equipment, vehicle or machinery requiring pre-use inspection.",
+      "type": "object",
+      "properties": {
+        "companyRuc": { "type": "string" },
+        "name": { "type": "string" },
+        "code": { "type": "string" },
+        "type": { "type": "string" },
+        "status": { "type": "string", "enum": ["operative", "inoperative"] },
+        "checklistItems": {
+          "type": "array",
+          "items": { "type": "object" }
+        },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "companyRuc",
+        "name",
+        "code",
+        "type",
+        "status",
+        "checklistItems",
+        "createdAt"
+      ]
+    },
+    "PreUseInspection": {
+      "title": "PreUseInspection",
+      "description": "Represents a pre-use checklist completed by a worker.",
+      "type": "object",
+      "properties": {
+        "companyRuc": { "type": "string" },
+        "equipmentId": { "type": "string" },
+        "equipmentName": { "type": "string" },
+        "equipmentCode": { "type": "string" },
+        "workerUid": { "type": "string" },
+        "workerName": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "items": {
+          "type": "array",
+          "items": { "type": "object" }
+        },
+        "isOperative": { "type": "boolean" },
+        "signature": { "type": "string" }
+      },
+      "required": [
+        "companyRuc",
+        "equipmentId",
+        "equipmentName",
+        "equipmentCode",
+        "workerUid",
+        "workerName",
+        "date",
+        "items",
+        "isOperative"
+      ]
+    },
+    "MedicalLeave": {
+      "title": "MedicalLeave",
+      "description": "Represents a medical leave or sickness record.",
+      "type": "object",
+      "properties": {
+        "companyRuc": { "type": "string" },
+        "workerId": { "type": "string" },
+        "workerName": { "type": "string" },
+        "workerDni": { "type": "string" },
+        "startDate": { "type": "string", "format": "date" },
+        "endDate": { "type": "string", "format": "date" },
+        "daysLost": { "type": "number" },
+        "cie10Code": { "type": "string" },
+        "diagnosis": { "type": "string" },
+        "type": {
+          "type": "string",
+          "enum": [
+            "Enfermedad Común",
+            "Enfermedad Ocupacional",
+            "Accidente de Trabajo",
+            "Accidente Común",
+            "Maternidad",
+            "Paternidad",
+            "Otros"
+          ]
+        },
+        "attachmentUrl": { "type": "string" },
+        "attachmentName": { "type": "string" },
+        "status": {
+          "type": "string",
+          "enum": ["Aprobado", "Pendiente", "Rechazado"]
+        },
+        "notes": { "type": "string" },
+        "recordedBy": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "companyRuc",
+        "workerName",
+        "startDate",
+        "endDate",
+        "daysLost",
+        "diagnosis",
+        "type",
+        "status"
+      ]
+    },
+    "InventoryItem": {
+      "title": "InventoryItem",
+      "description": "Represents a security equipment or EPP item in the inventory.",
+      "type": "object",
+      "properties": {
+        "companyRuc": { "type": "string" },
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "location": { "type": "string" },
+        "stock": { "type": "number" },
+        "minimumStock": { "type": "number" },
+        "status": { "type": "string", "enum": ["active", "inactive", "maintenance"] },
+        "description": { "type": "string" },
+        "nextMaintenanceDate": { "type": "string", "format": "date" },
+        "photoUrl": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "companyRuc",
+        "name",
+        "category",
+        "location",
+        "stock",
+        "minimumStock",
+        "status",
+        "createdAt"
+      ]
+    },
+    "Training": {
+      "title": "Training",
+      "description": "Represents a safety and health training or induction course.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "createdBy": { "type": "string" },
+        "companyRuc": { "type": "string" },
+        "completedBy": { "type": "array" },
+        "completions": { "type": "array" },
+        "videoUrl": { "type": "string" },
+        "materialUrl": { "type": "string" },
+        "materialName": { "type": "string" },
+        "targetArea": { "type": "string" },
+        "category": { "type": "string" },
+        "validityMonths": { "type": "number" },
+        "dueDate": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["active", "archived"] },
+        "quiz": { "type": "object" },
+        "signatureBase64": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "title",
+        "description",
+        "createdBy",
+        "createdAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/trainings/{trainingId}": {
+      "schema": { "$ref": "#/entities/Training" },
+      "description": "Stores training sessions and worker attendance and completions."
+    },
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Stores user profiles and roles."
+    },
+    "/companies/{companyId}": {
+      "schema": { "$ref": "#/entities/Company" },
+      "description": "Stores company information and authorized workers."
+    },
+    "/invitations/{dni}": {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "companyRuc": { "type": "string" },
+          "businessName": { "type": "string" },
+          "dni": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["companyRuc", "businessName", "dni", "createdAt"]
+      },
+      "description": "Stores private invitations for workers to join a company using their DNI."
+    },
+    "/posts/{postId}": {
+      "schema": { "$ref": "#/entities/Post" },
+      "description": "Stores news, flyers, and notices."
+    },
+    "/documents/{documentId}": {
+      "schema": { "$ref": "#/entities/Document" },
+      "description": "Stores official SST documents."
+    },
+    "/reports/{reportId}": {
+      "schema": { "$ref": "#/entities/Report" },
+      "description": "Stores SST reports submitted by workers."
+    },
+    "/suggestions/{suggestionId}": {
+      "schema": { "$ref": "#/entities/Suggestion" },
+      "description": "Stores anonymous or identified suggestions for SST improvements."
+    },
+    "/healthCards/{cardId}": {
+      "schema": { "$ref": "#/entities/HealthCard" },
+      "description": "Stores health cards (carnets de sanidad) for workers."
+    },
+    "/medicalExams/{examId}": {
+      "schema": { "$ref": "#/entities/MedicalExam" },
+      "description": "Stores occupational medical exams for workers."
+    },
+    "/epp_catalog/{eppId}": {
+      "schema": { "$ref": "#/entities/EppItem" },
+      "description": "Stores EPP catalog items for a company."
+    },
+    "/epp_deliveries/{deliveryId}": {
+      "schema": { "$ref": "#/entities/EppDelivery" },
+      "description": "Stores EPP delivery records for workers."
+    },
+    "/corrective_actions/{actionId}": {
+      "schema": { "$ref": "#/entities/CorrectiveAction" },
+      "description": "Stores corrective action tickets generated from reports, inspections or pre-use."
+    },
+    "/equipment/{equipmentId}": {
+      "schema": { "$ref": "#/entities/Equipment" },
+      "description": "Stores equipments, vehicles, and their pre-use checklist templates."
+    },
+    "/preuse_inspections/{inspectionId}": {
+      "schema": { "$ref": "#/entities/PreUseInspection" },
+      "description": "Stores the filled pre-use check results for equipments."
+    },
+    "/medical_leaves/{leaveId}": {
+      "schema": { "$ref": "#/entities/MedicalLeave" },
+      "description": "Stores medical leaves for workers."
+    },
+    "/inventory_items/{itemId}": {
+      "schema": { "$ref": "#/entities/InventoryItem" },
+      "description": "Stores general safety equipment and EPP stock."
+    }
+  }
+}

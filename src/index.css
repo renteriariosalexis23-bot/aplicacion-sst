@@ -1,0 +1,95 @@
+@import "tailwindcss";
+@theme {
+  --font-sans: "Plus Jakarta Sans", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Fraunces", Georgia, serif;
+
+  /* Paleta de marca: los colores salen de la empresa seleccionada (utils/brand.ts) */
+  --color-blue-50: color-mix(in srgb, var(--brand-main) 6%, white);
+  --color-blue-100: color-mix(in srgb, var(--brand-main) 12%, white);
+  --color-blue-200: color-mix(in srgb, var(--brand-main) 22%, white);
+  --color-blue-300: color-mix(in srgb, var(--brand-main) 40%, white);
+  --color-blue-400: color-mix(in srgb, var(--brand-main) 65%, white);
+  --color-blue-500: color-mix(in srgb, var(--brand-main) 85%, var(--brand-accent));
+  --color-blue-600: var(--brand-main);
+  --color-blue-700: color-mix(in srgb, var(--brand-main) 70%, var(--brand-deep));
+  --color-blue-800: color-mix(in srgb, var(--brand-main) 35%, var(--brand-deep));
+  --color-blue-900: var(--brand-deep);
+  --color-blue-950: color-mix(in srgb, var(--brand-deep) 75%, black);
+  --color-sky-50: color-mix(in srgb, var(--brand-main) 6%, white);
+  --color-sky-100: color-mix(in srgb, var(--brand-main) 12%, white);
+  --color-sky-200: color-mix(in srgb, var(--brand-main) 22%, white);
+  --color-sky-300: color-mix(in srgb, var(--brand-main) 40%, white);
+  --color-sky-400: color-mix(in srgb, var(--brand-main) 65%, white);
+  --color-sky-500: color-mix(in srgb, var(--brand-main) 85%, var(--brand-accent));
+  --color-sky-600: var(--brand-main);
+  --color-sky-700: color-mix(in srgb, var(--brand-main) 70%, var(--brand-deep));
+  --color-sky-800: color-mix(in srgb, var(--brand-main) 35%, var(--brand-deep));
+  --color-sky-900: var(--brand-deep);
+  --color-sky-950: color-mix(in srgb, var(--brand-deep) 75%, black);
+  --color-indigo-50: color-mix(in srgb, var(--brand-main) 6%, white);
+  --color-indigo-100: color-mix(in srgb, var(--brand-main) 12%, white);
+  --color-indigo-200: color-mix(in srgb, var(--brand-main) 22%, white);
+  --color-indigo-300: color-mix(in srgb, var(--brand-main) 40%, white);
+  --color-indigo-400: color-mix(in srgb, var(--brand-main) 65%, white);
+  --color-indigo-500: color-mix(in srgb, var(--brand-main) 85%, var(--brand-accent));
+  --color-indigo-600: var(--brand-main);
+  --color-indigo-700: color-mix(in srgb, var(--brand-main) 70%, var(--brand-deep));
+  --color-indigo-800: color-mix(in srgb, var(--brand-main) 35%, var(--brand-deep));
+  --color-indigo-900: var(--brand-deep);
+  --color-indigo-950: color-mix(in srgb, var(--brand-deep) 75%, black);
+  /* Neutros con un leve tinte del tono de la empresa */
+  --color-slate-50: hsl(var(--brand-h) 30% 98.5%);
+  --color-slate-100: hsl(var(--brand-h) 24% 96.6%);
+  --color-slate-200: hsl(var(--brand-h) 16% 91.5%);
+  --color-slate-300: hsl(var(--brand-h) 12% 84%);
+  --color-slate-400: hsl(var(--brand-h) 8% 66%);
+  --color-slate-500: hsl(var(--brand-h) 7% 49%);
+  --color-slate-600: hsl(var(--brand-h) 8% 38%);
+  --color-slate-700: hsl(var(--brand-h) 10% 29%);
+  --color-slate-800: hsl(var(--brand-h) 12% 21%);
+  --color-slate-900: hsl(var(--brand-h) 13% 15%);
+  --color-slate-950: hsl(var(--brand-h) 15% 9%);
+}
+
+:root {
+  --brand-main: #861079;
+  --brand-accent: #ad409c;
+  --brand-deep: #46133f;
+  --brand-h: 306;
+  --art-filter: none;
+}
+
+@layer utilities {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+body {
+  -webkit-tap-highlight-color: transparent;
+  font-family: var(--font-sans);
+  background: var(--color-slate-50);
+  color: var(--color-slate-900);
+}
+.brand-gradient {
+  background: linear-gradient(105deg, var(--brand-deep) 0%, var(--brand-main) 60%, var(--brand-accent) 100%);
+}
+.brand-gradient-soft {
+  background: linear-gradient(100deg, var(--brand-main), var(--brand-accent));
+}
+.brand-art {
+  filter: var(--art-filter);
+}
+@utility scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Campos de solo lectura (p. ej. nombre y DNI de quien firma) */
+input[readonly] {
+  background-color: var(--color-slate-50);
+  color: var(--color-slate-600);
+  cursor: default;
+}

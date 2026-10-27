@@ -1,0 +1,5 @@
+{
+  "name": "Gestión SST ",
+  "description": "Sistema integral de Gestión de Seguridad y Salud en el Trabajo (SST) que incluye los 8 registros obligatorios, reportes de incidentes, investigaciones y cumplimiento normativo (RM 050-2013-TR).",
+  "requestFramePermissions": ["camera"]
+}
