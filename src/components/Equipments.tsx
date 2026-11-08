@@ -423,7 +423,7 @@ export const Equipments: React.FC<EquipmentsProps> = ({ onViewHistory }) => {
   }
 
   return (
-    <div className="w-full p-4 sm:p-0">
+    <div className="w-full">
       <PageHeader
         title="Equipos y Códigos QR"
         description="Gestiona activos físicos e imprime códigos QR para inspecciones rápidas."

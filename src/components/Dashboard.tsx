@@ -735,7 +735,7 @@ export const Dashboard: React.FC = () => {
   };
 
   return (
-    <div id="dashboard-content" className="w-full space-y-8 pb-12 bg-slate-50 p-6 rounded-xl">
+    <div id="dashboard-content" className="w-full space-y-5 rounded-xl bg-slate-50 pb-12 sm:space-y-8 sm:p-6">
       {nextMeeting && daysToMeeting !== null && (
         <div className={`bg-${alertColorClass}-50 border-l-4 border-${alertColorClass}-600 p-4 rounded-r-xl shadow-sm flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4`}>
           <div className="flex items-center">

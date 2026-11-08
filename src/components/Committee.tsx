@@ -487,7 +487,7 @@ export const Committee: React.FC = () => {
         }
       />
 
-      <div className="flex space-x-1 bg-slate-200/50 p-1 rounded-xl w-full max-w-full overflow-x-auto whitespace-nowrap hide-scrollbar">
+      <div className="tab-bar flex space-x-1 bg-slate-200/50 p-1 rounded-xl w-full max-w-full overflow-x-auto whitespace-nowrap">
         <button
           onClick={() => setActiveTab("members")}
           className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all ${

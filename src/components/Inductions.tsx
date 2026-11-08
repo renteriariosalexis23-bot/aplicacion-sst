@@ -381,7 +381,7 @@ export const Inductions: React.FC = () => {
                   className="w-full rounded-lg border-slate-300 focus:border-blue-500 focus:ring-blue-500"
                 />
               </div>
-              <div className="col-span-2">
+              <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-slate-700 mb-1">
                   Supervisor a Cargo (Inductor)
                 </label>

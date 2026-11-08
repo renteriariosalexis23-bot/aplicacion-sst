@@ -93,3 +93,22 @@ input[readonly] {
   color: var(--color-slate-600);
   cursor: default;
 }
+
+/* Pestañas: en celular se deslizan de lado dentro de su barra, sin correr la página */
+.tab-bar {
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x proximity;
+}
+.tab-bar::-webkit-scrollbar { display: none; }
+.tab-bar > * { flex-shrink: 0; white-space: nowrap; scroll-snap-align: start; }
+@media (max-width: 639px) {
+  /* Un borde que se desvanece avisa que hay más pestañas a la derecha */
+  .tab-bar { mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); }
+  .tab-bar.at-end { mask-image: none; }
+  /* Botones y buscadores del encabezado ocupan el ancho disponible */
+  .page-header-actions { width: 100%; }
+  .page-header-actions > *:has(input) { flex: 1 1 100%; }
+}

@@ -1183,7 +1183,7 @@ export const Trainings: React.FC = () => {
       )}
 
       {/* Tabs */}
-      <div className="flex space-x-1 bg-slate-100 p-1 rounded-lg mb-6 w-max">
+      <div className="tab-bar flex space-x-1 bg-slate-100 p-1 rounded-lg mb-6 w-fit">
         <button
           onClick={() => setActiveTab("lista")}
           className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${

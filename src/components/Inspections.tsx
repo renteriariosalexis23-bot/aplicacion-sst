@@ -1312,19 +1312,19 @@ export const Inspections: React.FC = () => {
                 <label className="block text-sm font-medium text-blue-900">
                   Generar con IA
                 </label>
-                <div className="flex space-x-2">
+                <div className="flex flex-col gap-2 sm:flex-row">
                   <input
                     type="text"
                     value={aiPrompt}
                     onChange={(e) => setAiPrompt(e.target.value)}
-                    className="flex-1 px-3 py-2 border border-blue-200 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                    className="min-w-0 flex-1 px-3 py-2 border border-blue-200 rounded-lg focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Ej. Checklist para inspección de montacargas"
                   />
                   <button
                     type="button"
                     onClick={generateTemplateWithAI}
                     disabled={isGenerating || !aiPrompt}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center"
                   >
                     <Sparkles className="w-4 h-4 mr-2" />
                     {isGenerating ? "Generando..." : "Generar"}
@@ -2041,7 +2041,7 @@ export const Inspections: React.FC = () => {
           </div>
 
           {activeAdminTab === "equipments" && (
-            <div className="-mx-4 sm:mx-0">
+            <div>
               <Equipments
                 onViewHistory={(eqName) => {
                   setInspectionSearchQuery(eqName);

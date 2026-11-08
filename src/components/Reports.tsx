@@ -746,7 +746,7 @@ export const Reports: React.FC = () => {
       />
 
       {["employer", "super_admin", "gerencia"].includes(profile?.role || "") && (
-        <div className="flex border-b border-slate-200 overflow-x-auto mb-6 bg-white rounded-t-xl">
+        <div className="tab-bar flex border-b border-slate-200 overflow-x-auto mb-6 bg-white rounded-t-xl">
           <button
             onClick={() => setActiveTab("operacion")}
             className={`px-6 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${

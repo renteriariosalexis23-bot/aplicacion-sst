@@ -226,7 +226,7 @@ export const Drills: React.FC = () => {
   }
 
   return (
-    <div className="w-full max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+    <div className="w-full">
       <PageHeader
         title="Simulacros y Brigadas"
         description="Gestiona las brigadas de emergencia y registra los simulacros realizados."
@@ -255,7 +255,7 @@ export const Drills: React.FC = () => {
         }
       />
 
-      <div className="flex space-x-1 bg-slate-100 p-1 rounded-lg w-max mb-6">
+      <div className="tab-bar flex space-x-1 bg-slate-100 p-1 rounded-lg w-fit mb-6">
         <button
           onClick={() => setActiveTab("drills")}
           className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${

@@ -455,7 +455,7 @@ export const PreUse: React.FC = () => {
         icon={Truck}
       />
 
-      <div className="flex overflow-x-auto bg-slate-100 p-1 rounded-xl mb-6 w-fit">
+      <div className="tab-bar flex overflow-x-auto bg-slate-100 p-1 rounded-xl mb-6 w-fit">
         <button
           onClick={() => setActiveTab("my_equipment")}
           className={`px-5 py-2.5 rounded-lg font-medium text-sm transition-all whitespace-nowrap flex items-center ${activeTab === "my_equipment" ? "bg-white text-sky-600 shadow-sm" : "text-slate-600"}`}

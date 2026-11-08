@@ -139,7 +139,7 @@ export const Companies: React.FC = () => {
   );
 
   return (
-    <div className="w-full p-4 md:p-6">
+    <div className="w-full">
       <PageHeader
         title="Gestión de Empresas"
         description="Administra las empresas registradas en el sistema."

@@ -262,7 +262,7 @@ export const MedicalExamsManager: React.FC = () => {
   );
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="w-full">
       <PageHeader
         title="Exámenes Médicos"
         description={selectedCompany.businessName}

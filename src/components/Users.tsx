@@ -574,7 +574,7 @@ export const Users: React.FC = () => {
         }
       />
 
-      <div className="flex space-x-1 bg-slate-200/50 p-1 rounded-xl w-fit mb-6">
+      <div className="tab-bar flex space-x-1 bg-slate-200/50 p-1 rounded-xl w-fit mb-6">
         <button
           onClick={() => setActiveTab("active")}
           className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all ${

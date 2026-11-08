@@ -47,6 +47,32 @@ export const Layout: React.FC = () => {
     setIsMobileMenuOpen(false);
   }, [location.pathname]);
 
+  // Barras de pestañas: quita el borde desvanecido cuando ya se ve la última pestaña
+  React.useEffect(() => {
+    const update = (el: Element) =>
+      el.classList.toggle("at-end", el.scrollLeft + el.clientWidth >= el.scrollWidth - 4);
+    let frame = 0;
+    const updateAll = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => document.querySelectorAll(".tab-bar").forEach(update));
+    };
+    const onScroll = (e: Event) => {
+      const el = e.target as Element;
+      if (el instanceof Element && el.classList.contains("tab-bar")) update(el);
+    };
+    const observer = new MutationObserver(updateAll);
+    observer.observe(document.body, { childList: true, subtree: true });
+    document.addEventListener("scroll", onScroll, true);
+    window.addEventListener("resize", updateAll);
+    updateAll();
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+      document.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("resize", updateAll);
+    };
+  }, []);
+
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -257,7 +283,9 @@ export const Layout: React.FC = () => {
             <Link to="/" className="flex min-w-0 items-center" aria-label="Ir al inicio">
               <CompanyLogo
                 variant="white"
-                className={`h-7 w-auto max-w-[120px] object-contain object-left sm:max-w-[200px] md:h-10 md:max-w-[270px] ${
+                className={`w-auto object-contain object-left sm:max-w-[200px] md:h-10 md:max-w-[270px] ${
+                  brand.key === "ih" ? "h-7 max-w-[150px]" : "h-11 max-w-[120px]"
+                } ${
                   brand.header === "panel" ? "md:hidden" : ""
                 }`}
               />
@@ -442,7 +470,7 @@ export const Layout: React.FC = () => {
       )}
 
       {/* Contenido */}
-      <main className="mx-auto max-w-7xl px-2 pb-32 pt-4 md:px-8 md:pb-12 md:pt-6 print:max-w-none print:p-0">
+      <main className="mx-auto max-w-7xl px-3 pb-32 pt-4 md:px-8 md:pb-12 md:pt-6 print:max-w-none print:p-0">
         <Outlet />
       </main>
 

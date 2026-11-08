@@ -100,7 +100,7 @@ export const Home: React.FC = () => {
           <p className="mb-2.5 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
             Tus empresas
           </p>
-          <div className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-3">
+          <div className="tab-bar -mx-3 flex gap-3 px-3 pb-1 sm:mx-0 sm:px-0 md:grid md:grid-cols-3 md:gap-4 md:overflow-visible">
             {companies.map((company) => {
               const brand = resolveBrand(company);
               const active = company.ruc === selectedCompany?.ruc;
@@ -108,20 +108,20 @@ export const Home: React.FC = () => {
                 <button
                   key={company.id || company.ruc}
                   onClick={() => setSelectedCompanyRuc(company.ruc)}
-                  className={`flex min-w-0 items-center gap-3 rounded-2xl border bg-white px-3 py-3 text-left sm:gap-4 sm:px-4 sm:py-3.5 transition-shadow hover:shadow-md ${
+                  className={`flex w-[82%] min-w-0 items-center gap-3 rounded-2xl border bg-white px-3 py-3 text-left md:w-auto sm:gap-4 sm:px-4 sm:py-3.5 transition-shadow hover:shadow-md ${
                     active ? "border-blue-600 shadow-[0_10px_30px_-18px_var(--brand-main)]" : "border-slate-200"
                   }`}
                   style={{ borderLeft: `4px solid ${brand.main}` }}
                 >
-                  <span className="flex h-12 w-20 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white p-1.5 sm:h-14 sm:w-24 sm:p-2">
+                  <span className="flex h-11 w-16 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white p-1.5 sm:h-14 sm:w-24 sm:p-2">
                     <img src={brand.logo} alt="" className="max-h-full max-w-full object-contain" />
                   </span>
                   <span className="min-w-0 flex-1 leading-tight">
-                    <b className="block truncate text-[15px] text-slate-900">{company.businessName}</b>
-                    <small className="text-xs text-slate-500">RUC {company.ruc}</small>
+                    <b className="line-clamp-2 block text-[14px] leading-tight text-slate-900 sm:truncate sm:text-[15px]">{company.businessName}</b>
+                    <small className="block truncate text-xs text-slate-500">RUC {company.ruc}</small>
                   </span>
                   {active ? (
-                    <span className="shrink-0 rounded-full bg-blue-600 px-3 py-1 text-xs font-bold text-white">
+                    <span className="shrink-0 rounded-full bg-blue-600 px-2.5 py-1 text-[11px] font-bold text-white sm:px-3 sm:text-xs">
                       Viendo
                     </span>
                   ) : (
@@ -144,11 +144,11 @@ export const Home: React.FC = () => {
               to={item.href}
               className="group relative flex flex-col overflow-hidden rounded-[19px] border border-blue-600 bg-blue-600 text-white transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_18px_40px_-18px_var(--brand-main)]"
             >
-              <span className="flex h-[110px] items-center justify-center overflow-hidden bg-[#f1f1f1] sm:h-[170px]">
+              <span className="flex h-[88px] items-center justify-center overflow-hidden bg-[#f1f1f1] sm:h-[170px]">
                 <img
                   src={item.art}
                   alt=""
-                  className="brand-art h-[124px] w-auto sm:h-[190px] max-w-none object-contain transition-transform duration-500 group-hover:scale-105"
+                  className="brand-art h-[100px] w-auto sm:h-[190px] max-w-none object-contain transition-transform duration-500 group-hover:scale-105"
                 />
               </span>
               {counts[item.href] > 0 && (
@@ -159,10 +159,10 @@ export const Home: React.FC = () => {
                   {counts[item.href]}
                 </span>
               )}
-              <span className="flex flex-1 items-center justify-between gap-2 px-3.5 py-3.5 sm:gap-3 sm:px-6 sm:py-5">
+              <span className="flex flex-1 items-center justify-between gap-2 px-3 py-2.5 sm:gap-3 sm:px-6 sm:py-5">
                 <span className="min-w-0">
                   <strong className="block text-[13px] font-extrabold leading-tight sm:text-base">{item.tileName || item.name}</strong>
-                  <small className="mt-1 block text-[11px] font-semibold text-white/85">{item.hint || item.group || "General"}</small>
+                  <small className="mt-0.5 line-clamp-2 block text-[11px] font-semibold leading-snug text-white/85">{item.hint || item.group || "General"}</small>
                 </span>
                 <span
                   aria-hidden="true"
