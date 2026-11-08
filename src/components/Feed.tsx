@@ -44,6 +44,18 @@ import { notifyAllWorkers } from "../utils/notifications";
 import { uploadToCloudinary } from "../utils/cloudinary";
 import { ImageModal } from "./ui/ImageModal";
 
+// Hora corta, como en las redes sociales: "hace 5 min", "hace 2 h", "hace 3 d", "8 nov"
+const timeAgo = (date: Date) => {
+  const minutes = Math.floor((Date.now() - date.getTime()) / 60000);
+  if (minutes < 1) return "Ahora";
+  if (minutes < 60) return `hace ${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `hace ${hours} h`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `hace ${days} d`;
+  return format(date, days < 365 ? "d MMM" : "d MMM yyyy", { locale: es });
+};
+
 const ExpandableText: React.FC<{ text: string; limit?: number }> = ({
   text,
   limit = 300,
@@ -80,7 +92,9 @@ const ExpandableText: React.FC<{ text: string; limit?: number }> = ({
 import { PageHeader } from "./ui/PageHeader";
 import { Newspaper } from "lucide-react";
 
-export const Feed: React.FC = () => {
+// embedded: el Muro dentro del Inicio (sin encabezado propio ni lista de pendientes,
+// que el Inicio ya muestra en «Lo urgente»)
+export const Feed: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
   const navigate = useNavigate();
   const { profile } = useAuth();
   const { companies, selectedCompany } = useCompany();
@@ -301,7 +315,7 @@ export const Feed: React.FC = () => {
       await notifyAllWorkers(
         typeLabel,
         `Se ha publicado: ${title}`,
-        "/muro",
+        "/",
         postToCompanyRuc,
       );
 
@@ -459,8 +473,34 @@ export const Feed: React.FC = () => {
     return /\.(mp3|wav|ogg|m4a|webm)$/i.test(filename);
   };
 
+  const canPost = ["employer", "supervisor", "super_admin", "gerencia"].includes(profile?.role || "");
+  const initials = (name?: string) =>
+    (name || "?")
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((w) => w[0])
+      .join("")
+      .toUpperCase();
+
   return (
     <div className="w-full">
+      {embedded && canPost && !isCreating && (
+        <button
+          onClick={() => setIsCreating(true)}
+          className="mb-5 flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 text-left shadow-sm transition-colors hover:border-slate-300 sm:p-4"
+        >
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-blue-100 text-sm font-bold text-blue-700">
+            {initials(profile?.displayName)}
+          </span>
+          <span className="flex-1 rounded-full bg-slate-100 px-4 py-2.5 text-[15px] text-slate-500">
+            ¿Qué quieres anunciar, {(profile?.displayName || "").split(" ")[0]}?
+          </span>
+          <Plus className="hidden h-5 w-5 text-blue-600 sm:block" />
+        </button>
+      )}
+
+      {!embedded && (
       <PageHeader
         title="Muro"
         description="Avisos y comunicados para todo el personal."
@@ -481,9 +521,10 @@ export const Feed: React.FC = () => {
             )
         }
       />
+      )}
 
       {/* 📋 Section of Pending Actions and Signatures for Mobile-friendly workflow */}
-      {profile && (pendingDocs.length > 0 || pendingExams.length > 0) && (
+      {!embedded && profile && (pendingDocs.length > 0 || pendingExams.length > 0) && (
         <div className="bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/35 rounded-2xl p-5 mb-8 shadow-sm">
           <div className="flex items-center space-x-3 mb-4">
             <div className="p-2 bg-amber-600 rounded-xl text-white shadow-md shadow-amber-500/15 shrink-0">
@@ -727,41 +768,42 @@ export const Feed: React.FC = () => {
           Cargando publicaciones...
         </div>
       ) : posts.length === 0 ? (
-        <div className="text-center py-10 text-slate-500 bg-white rounded-xl shadow-sm border border-slate-200">
-          No hay publicaciones aún.
+        <div className="rounded-2xl border border-slate-200 bg-white px-6 py-10 text-center">
+          <p className="font-semibold text-slate-700">Todavía no hay publicaciones.</p>
+          <p className="mt-1 text-sm text-slate-500">
+            {canPost ? "Escribe el primer anuncio para todo el personal." : "Aquí verás los anuncios y comunicados de la empresa."}
+          </p>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-5">
           {posts.map((post) => {
             const counts = getReactionCounts(post.reactions);
             const myReaction = profile ? post.reactions?.[profile.uid] : null;
 
             return (
-              <div
+              <article
                 key={post.id}
-                className="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200"
+                className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
               >
-                <div className="p-6">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mb-2 ${getTypeColor(post.type)}`}
-                      >
-                        {getTypeLabel(post.type)}
+                <div className="p-4 sm:p-5">
+                  <div className="mb-3 flex items-start justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-blue-100 text-sm font-bold text-blue-700">
+                        {initials(post.authorName)}
                       </span>
-                      <h2 className="text-xl font-bold text-slate-900">
-                        {post.title}
-                      </h2>
-                      <p className="text-sm text-slate-500 mt-1">
-                        Publicado por {post.authorName} •{" "}
-                        {post.createdAt
-                          ? format(
-                              post.createdAt.toDate(),
-                              "d 'de' MMMM, yyyy 'a las' HH:mm",
-                              { locale: es },
-                            )
-                          : "Justo ahora"}
-                      </p>
+                      <div className="min-w-0 leading-tight">
+                        <p className="truncate text-[15px] font-semibold text-slate-900">{post.authorName}</p>
+                        <p
+                          className="text-xs text-slate-500"
+                          title={post.createdAt ? format(post.createdAt.toDate(), "d 'de' MMMM, yyyy 'a las' HH:mm", { locale: es }) : ""}
+                        >
+                          {post.createdAt ? timeAgo(post.createdAt.toDate()) : "Ahora"}
+                          {" · "}
+                          <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${getTypeColor(post.type)}`}>
+                            {getTypeLabel(post.type)}
+                          </span>
+                        </p>
+                      </div>
                     </div>
                     {(profile?.role === "employer" ||
                       profile?.role === "supervisor" ||
@@ -777,7 +819,8 @@ export const Feed: React.FC = () => {
                         </button>
                       )}
                   </div>
-                  <div className="prose prose-slate max-w-none mb-4">
+                  {post.title && <h2 className="mb-1.5 text-[17px] font-bold leading-snug text-slate-900">{post.title}</h2>}
+                  <div className="prose prose-slate mb-3 max-w-none text-[15px]">
                     <ExpandableText text={post.content} />
                   </div>
 
@@ -1127,7 +1170,7 @@ export const Feed: React.FC = () => {
                     </div>
                   )}
                 </div>
-              </div>
+              </article>
             );
           })}
         </div>

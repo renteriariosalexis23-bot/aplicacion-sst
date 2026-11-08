@@ -78,8 +78,8 @@ const getNotificationStyles = (title: string, message: string) => {
   };
 };
 
-// Las publicaciones del Muro antiguas enlazan a "/", que ahora es el Inicio
-const notificationTarget = (link: string) => (link === "/" ? "/muro" : link);
+// El Muro vive en el Inicio: los avisos antiguos que enlazan a "/muro" van al Inicio
+const notificationTarget = (link: string) => (link === "/muro" ? "/" : link);
 
 export const NotificationsWidget: React.FC = () => {
   const { profile } = useAuth();

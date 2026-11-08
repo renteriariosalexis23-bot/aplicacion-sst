@@ -53,7 +53,6 @@ import { isMainAdmin } from "./constants/admin";
 const Login = lazy(() => import("./components/Login").then(m => ({ default: m.Login })));
 const VerifyDocument = lazy(() => import("./components/VerifyDocument").then(m => ({ default: m.VerifyDocument })));
 const Layout = lazy(() => import("./components/Layout").then(m => ({ default: m.Layout })));
-const Feed = lazy(() => import("./components/Feed").then(m => ({ default: m.Feed })));
 const Home = lazy(() => import("./components/Home").then(m => ({ default: m.Home })));
 const Documents = lazy(() => import("./components/Documents").then(m => ({ default: m.Documents })));
 const Reports = lazy(() => import("./components/Reports").then(m => ({ default: m.Reports })));
@@ -227,7 +226,7 @@ const AppContent: React.FC = () => {
                 }
               >
                 <Route index element={<Home />} />
-                <Route path="muro" element={<Feed />} />
+                <Route path="muro" element={<Navigate to="/" replace />} />
                 <Route path="documents" element={<Documents />} />
                 <Route path="reports" element={<Reports />} />
                 <Route path="profile" element={<Profile />} />

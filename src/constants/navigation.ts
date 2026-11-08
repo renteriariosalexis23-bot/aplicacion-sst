@@ -1,5 +1,4 @@
 import {
-  Newspaper,
   FileText,
   AlertTriangle,
   ShieldAlert,
@@ -41,7 +40,7 @@ export interface NavigationItem {
 
 export const NAVIGATION: NavigationItem[] = [
   { name: "Inicio", href: "/", icon: Home },
-  { name: "Muro", href: "/muro", icon: Newspaper, art: "/ilustraciones/muro.png", hint: "Noticias y avisos" },
+  // El Muro ya no es un módulo aparte: se muestra en el Inicio
   { name: "Panel Directivo", href: "/dashboard", icon: BarChart3, art: "/ilustraciones/panel.png", hint: "Indicadores de la empresa" },
 
   // Planificación y Control

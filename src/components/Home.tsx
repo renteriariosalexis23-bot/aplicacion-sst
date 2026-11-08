@@ -7,6 +7,7 @@ import { useCompany } from "../CompanyContext";
 import { navigationForRole } from "../constants/navigation";
 import { resolveBrand } from "../utils/brand";
 import { usePendingItems } from "../hooks/usePendingItems";
+import { Feed } from "./Feed";
 
 const greeting = (hour: number) =>
   hour < 12 ? "Buenos días" : hour < 19 ? "Buenas tardes" : "Buenas noches";
@@ -15,11 +16,6 @@ export const Home: React.FC = () => {
   const { profile } = useAuth();
   const { companies, selectedCompany, setSelectedCompanyRuc } = useCompany();
   const navigation = navigationForRole(profile?.role, selectedCompany, profile);
-  // Todos los módulos en tarjetas grandes; los principales primero
-  const tiles = [
-    ...navigation.filter((item) => item.featured),
-    ...navigation.filter((item) => !item.featured && item.art),
-  ];
   const firstName = (profile?.displayName || "").split(" ")[0];
   const pending = usePendingItems();
   const counts: Record<string, number> = {
@@ -46,13 +42,16 @@ export const Home: React.FC = () => {
     ["employer", "super_admin", "gerencia"].includes(profile?.role || "") &&
     companies.length > 1;
 
+  const modules = navigation.filter((item) => item.href !== "/" && item.art);
+  const featured = modules.filter((item) => item.featured);
+
   return (
-    <div className="px-2 pb-6 md:px-0">
+    <div className="pb-6">
       <p className="text-xs font-bold uppercase tracking-[0.12em] text-blue-600">
         {format(now, "EEEE, d 'de' MMMM", { locale: es })}
         {selectedCompany ? ` · ${selectedCompany.businessName}` : ""}
       </p>
-      <h1 className="mt-2 text-[34px] font-bold leading-[1.1] tracking-[-0.03em] text-slate-900 md:text-[46px]">
+      <h1 className="mt-2 text-[30px] font-bold leading-[1.1] tracking-[-0.03em] text-slate-900 md:text-[40px]">
         {greeting(now.getHours())}
         {firstName && (
           <>
@@ -64,119 +63,131 @@ export const Home: React.FC = () => {
       <p className="mt-2 text-[15px] text-slate-500">
         {urgent.length > 0 ? (
           <>
-            Tienes <b className="text-slate-900">{urgent.length} {urgent.length === 1 ? "tema" : "temas"}</b> por atender. Elige por dónde empezar.
+            Tienes <b className="text-slate-900">{urgent.length} {urgent.length === 1 ? "tema" : "temas"}</b> por atender.
           </>
         ) : (
-          "Todo al día. Elige por dónde empezar."
+          "Todo al día."
         )}
       </p>
 
-      {urgent.length > 0 && (
-        <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
-          <h2 className="mb-2 text-[18px] font-bold tracking-[-0.02em] text-slate-900">
-            Lo <em className="font-serif font-normal text-blue-600">urgente</em>
-          </h2>
-          <div className="divide-y divide-slate-100">
-            {urgent.slice(0, 5).map((u) => (
-              <Link key={u.key} to={u.href} className="group flex items-center gap-3 py-2.5">
-                <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-[#c23a4f] ring-4 ring-[#c23a4f]/15" />
-                <span className="min-w-0 flex-1 leading-tight">
-                  <b className="block truncate text-sm font-semibold text-slate-800">{u.title}</b>
-                  <small className="text-xs text-slate-500">{u.label}</small>
+      <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start lg:gap-8">
+        {/* Columna lateral (en celular va primero): lo urgente, empresas y accesos */}
+        <aside className="min-w-0 space-y-5 lg:order-2">
+          {urgent.length > 0 && (
+            <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+              <h2 className="mb-1 text-[17px] font-bold tracking-[-0.02em] text-slate-900">
+                Lo <em className="font-serif font-normal text-blue-600">urgente</em>
+              </h2>
+              <div className="divide-y divide-slate-100">
+                {urgent.slice(0, 5).map((u) => (
+                  <Link key={u.key} to={u.href} className="group flex items-center gap-3 py-2.5">
+                    <span className="h-2 w-2 shrink-0 rounded-full bg-[#c23a4f] ring-4 ring-[#c23a4f]/15" />
+                    <span className="min-w-0 flex-1 leading-tight">
+                      <b className="block truncate text-sm font-semibold text-slate-800">{u.title}</b>
+                      <small className="text-xs text-slate-500">{u.label}</small>
+                    </span>
+                    <span className="shrink-0 text-xs font-bold text-blue-600 transition-transform group-hover:translate-x-0.5">
+                      Ir →
+                    </span>
+                  </Link>
+                ))}
+              </div>
+              {urgent.length > 5 && (
+                <p className="pt-2 text-xs text-slate-500">Y {urgent.length - 5} más en sus módulos.</p>
+              )}
+            </section>
+          )}
+
+          {canSwitchCompany && (
+            <section>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Tus empresas</p>
+              <div className="tab-bar -mx-3 flex gap-2 px-3 pb-1 lg:mx-0 lg:flex-col lg:px-0">
+                {companies.map((company) => {
+                  const brand = resolveBrand(company);
+                  const active = company.ruc === selectedCompany?.ruc;
+                  return (
+                    <button
+                      key={company.id || company.ruc}
+                      onClick={() => setSelectedCompanyRuc(company.ruc)}
+                      className={`flex w-[78%] min-w-0 items-center gap-3 rounded-xl border bg-white px-3 py-2.5 text-left transition-colors hover:border-slate-300 lg:w-full ${
+                        active ? "border-blue-600" : "border-slate-200"
+                      }`}
+                      style={{ borderLeft: `4px solid ${brand.main}` }}
+                    >
+                      <span className="flex h-9 w-14 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-white p-1">
+                        <img src={brand.logo} alt="" className="max-h-full max-w-full object-contain" />
+                      </span>
+                      <span className="min-w-0 flex-1 leading-tight">
+                        <b className="block truncate text-sm text-slate-900">{company.businessName}</b>
+                        <small className="block truncate text-xs text-slate-500">RUC {company.ruc}</small>
+                      </span>
+                      {active && (
+                        <span className="shrink-0 rounded-full bg-blue-600 px-2 py-0.5 text-[11px] font-bold text-white">Viendo</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
+          {/* Celular: accesos rápidos deslizables */}
+          {featured.length > 0 && (
+            <section className="lg:hidden">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Accesos rápidos</p>
+              <div className="tab-bar -mx-3 flex gap-2.5 px-3 pb-1">
+                {featured.map((item) => (
+                  <Link
+                    key={item.href}
+                    to={item.href}
+                    className="relative flex w-[104px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white"
+                  >
+                    <span className="flex h-[64px] items-center justify-center overflow-hidden bg-[#f1f1f1]">
+                      <img src={item.art} alt="" className="brand-art h-[74px] w-auto max-w-none object-contain" />
+                    </span>
+                    {counts[item.href] > 0 && (
+                      <span className="absolute right-1.5 top-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-[#c23a4f] px-1.5 text-[11px] font-bold text-white">
+                        {counts[item.href]}
+                      </span>
+                    )}
+                    <span className="px-2 py-2 text-center text-[12px] font-semibold leading-tight text-slate-800">
+                      {item.tileName || item.name}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Computadora: todos los módulos en una lista */}
+          <section className="hidden rounded-2xl border border-slate-200 bg-white p-2 lg:block">
+            <p className="px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Módulos</p>
+            {modules.map((item) => (
+              <Link
+                key={item.href}
+                to={item.href}
+                className="flex items-center gap-3 rounded-xl px-2 py-1.5 transition-colors hover:bg-slate-50"
+              >
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#f1f1f1]">
+                  <img src={item.art} alt="" className="brand-art h-11 w-auto max-w-none object-contain" />
                 </span>
-                <span className="shrink-0 text-xs font-bold text-blue-600 transition-transform group-hover:translate-x-0.5">
-                  Ir →
-                </span>
+                <span className="min-w-0 flex-1 truncate text-sm font-semibold text-slate-700">{item.tileName || item.name}</span>
+                {counts[item.href] > 0 && (
+                  <span className="grid h-5 min-w-5 place-items-center rounded-full bg-[#c23a4f] px-1.5 text-[11px] font-bold text-white">
+                    {counts[item.href]}
+                  </span>
+                )}
               </Link>
             ))}
-          </div>
-          {urgent.length > 5 && (
-            <p className="pt-2 text-xs text-slate-500">Y {urgent.length - 5} más en sus módulos.</p>
-          )}
-        </section>
-      )}
+          </section>
+        </aside>
 
-      {canSwitchCompany && (
-        <section className="mt-7">
-          <p className="mb-2.5 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-            Tus empresas
-          </p>
-          <div className="tab-bar -mx-3 flex gap-3 px-3 pb-1 sm:mx-0 sm:px-0 md:grid md:grid-cols-3 md:gap-4 md:overflow-visible">
-            {companies.map((company) => {
-              const brand = resolveBrand(company);
-              const active = company.ruc === selectedCompany?.ruc;
-              return (
-                <button
-                  key={company.id || company.ruc}
-                  onClick={() => setSelectedCompanyRuc(company.ruc)}
-                  className={`flex w-[82%] min-w-0 items-center gap-3 rounded-2xl border bg-white px-3 py-3 text-left md:w-auto sm:gap-4 sm:px-4 sm:py-3.5 transition-shadow hover:shadow-md ${
-                    active ? "border-blue-600 shadow-[0_10px_30px_-18px_var(--brand-main)]" : "border-slate-200"
-                  }`}
-                  style={{ borderLeft: `4px solid ${brand.main}` }}
-                >
-                  <span className="flex h-11 w-16 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white p-1.5 sm:h-14 sm:w-24 sm:p-2">
-                    <img src={brand.logo} alt="" className="max-h-full max-w-full object-contain" />
-                  </span>
-                  <span className="min-w-0 flex-1 leading-tight">
-                    <b className="line-clamp-2 block text-[14px] leading-tight text-slate-900 sm:truncate sm:text-[15px]">{company.businessName}</b>
-                    <small className="block truncate text-xs text-slate-500">RUC {company.ruc}</small>
-                  </span>
-                  {active ? (
-                    <span className="shrink-0 rounded-full bg-blue-600 px-2.5 py-1 text-[11px] font-bold text-white sm:px-3 sm:text-xs">
-                      Viendo
-                    </span>
-                  ) : (
-                    <span className="shrink-0 text-xs font-bold" style={{ color: brand.main }}>
-                      Ver →
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
+        {/* El Muro: anuncios y comunicados, como en una red social */}
+        <section className="min-w-0 lg:order-1">
+          <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Muro</h2>
+          <Feed embedded />
         </section>
-      )}
-
-      {tiles.length > 0 && (
-        <section className="mt-6 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
-          {tiles.map((item) => (
-            <Link
-              key={item.href}
-              to={item.href}
-              className="group relative flex flex-col overflow-hidden rounded-[19px] border border-blue-600 bg-blue-600 text-white transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_18px_40px_-18px_var(--brand-main)]"
-            >
-              <span className="flex h-[88px] items-center justify-center overflow-hidden bg-[#f1f1f1] sm:h-[170px]">
-                <img
-                  src={item.art}
-                  alt=""
-                  className="brand-art h-[100px] w-auto sm:h-[190px] max-w-none object-contain transition-transform duration-500 group-hover:scale-105"
-                />
-              </span>
-              {counts[item.href] > 0 && (
-                <span
-                  className="absolute left-3 top-3 z-10 grid h-8 min-w-8 place-items-center rounded-full bg-[#c23a4f] px-2.5 font-serif text-lg italic text-white shadow-[0_8px_18px_#c23a4f55] sm:left-3.5 sm:top-3.5 sm:h-[38px] sm:min-w-[38px] sm:text-[22px]"
-                  aria-label={`${counts[item.href]} pendientes`}
-                >
-                  {counts[item.href]}
-                </span>
-              )}
-              <span className="flex flex-1 items-center justify-between gap-2 px-3 py-2.5 sm:gap-3 sm:px-6 sm:py-5">
-                <span className="min-w-0">
-                  <strong className="block text-[13px] font-extrabold leading-tight sm:text-base">{item.tileName || item.name}</strong>
-                  <small className="mt-0.5 line-clamp-2 block text-[11px] font-semibold leading-snug text-white/85">{item.hint || item.group || "General"}</small>
-                </span>
-                <span
-                  aria-hidden="true"
-                  className="shrink-0 text-lg transition-transform sm:text-xl duration-300 group-hover:translate-x-1"
-                >
-                  →
-                </span>
-              </span>
-            </Link>
-          ))}
-        </section>
-      )}
-
+      </div>
     </div>
   );
 };
