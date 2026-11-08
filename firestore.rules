@@ -252,7 +252,9 @@ service cloud.firestore {
         isOwner(userId) ||
         isEmployer() ||
         (isSupervisor() && isEmployeeOf(resource.data.get('companyRuc', ''))) ||
-        resource.data.get('role', '') in ['employer', 'super_admin', 'supervisor', 'gerencia', 'admin']
+        resource.data.get('role', '') in ['employer', 'super_admin', 'supervisor', 'gerencia', 'admin'] ||
+        // El administrador principal siempre recibe los avisos, sea cual sea el rol de su perfil
+        resource.data.get('email', '') in ['alexis9283alexis@gmail.com', 'primiuny281@gmail.com']
       );
       
       // A user can create their own profile. 

@@ -5,6 +5,7 @@ import { db } from "../firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { useCompany } from "../CompanyContext";
 import { useAuth } from "../AuthContext";
+import { isDispatchWorker } from "../constants/navigation";
 
 export const QRLanding: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -57,6 +58,14 @@ export const QRLanding: React.FC = () => {
           return;
         }
 
+        // Los equipos sin plantilla usan el checklist de Pre-Uso, que solo llena el personal de Despacho
+        if (type === "equipment" && !inspectionTemplateId && profile?.role === "worker" && !isDispatchWorker(profile)) {
+          setError(
+            "Este equipo usa el checklist de Pre-Uso, que solo llena el personal de Despacho. Si debes inspeccionarlo, pide al administrador que le asigne una plantilla de inspección.",
+          );
+          return;
+        }
+
         if (companyRuc) {
           if (["employer", "super_admin", "gerencia"].includes(profile?.role || "")) {
             setSelectedCompanyRuc(companyRuc);
@@ -83,9 +92,14 @@ export const QRLanding: React.FC = () => {
             navigate(`/mandatory-registers?id=${id}`);
           }
         }, 1500);
-      } catch (err) {
+      } catch (err: any) {
         console.error("Error verifying QR:", err);
-        setError("Error al verificar el código QR. Intente nuevamente.");
+        // Sin permiso para leerlo: el código es de otra empresa
+        setError(
+          err?.code === "permission-denied"
+            ? "Este código QR pertenece a otra empresa. No tienes permisos para escanearlo."
+            : "Error al verificar el código QR. Revisa tu conexión e intenta nuevamente.",
+        );
       }
     };
 
@@ -98,7 +112,7 @@ export const QRLanding: React.FC = () => {
         <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-4">
           <AlertCircle className="w-8 h-8" />
         </div>
-        <h2 className="text-2xl font-bold text-slate-800 mb-2">Código Inválido</h2>
+        <h2 className="text-2xl font-bold text-slate-800 mb-2">No se puede abrir este código</h2>
         <p className="text-slate-600 mb-6">{error}</p>
         <button
           onClick={() => navigate("/")}

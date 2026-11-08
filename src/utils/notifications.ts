@@ -11,7 +11,7 @@ import { db } from "../firebase";
 import { MAIN_ADMIN_EMAIL } from "../constants/admin";
 
 // Roles cuyo perfil puede leer cualquier persona de la empresa (para enviarles avisos)
-const ADMIN_ROLES = ["employer", "super_admin", "supervisor", "gerencia"];
+const ADMIN_ROLES = ["employer", "super_admin", "supervisor", "gerencia", "admin"];
 
 export const deleteNotificationsByTarget = async (targetId: string) => {
   try {
@@ -160,7 +160,6 @@ export const notifyAllEmployers = async (
     const mainAdminQ = query(
       collection(db, "users"),
       where("email", "==", MAIN_ADMIN_EMAIL),
-      where("role", "in", ADMIN_ROLES),
     );
     const maSnap = await getDocs(mainAdminQ);
     maSnap.docs.forEach((d) => {
@@ -184,7 +183,7 @@ export const notifyAllEmployers = async (
     empSnap.docs.forEach((d) => {
       const data = d.data() as any;
       const role = data.role;
-      if (role === "employer" || role === "super_admin" || role === "supervisor" || role === "gerencia") {
+      if (ADMIN_ROLES.includes(role)) {
         usersToNotify.push({ id: data.uid || d.id });
       }
     });
