@@ -26,7 +26,7 @@ export const Home: React.FC = () => {
     "/documents": pending.docsToSign.length,
     "/medical-exams": pending.examsToSign.length,
     "/trainings": pending.trainingsToComplete.length,
-    "/inspections": pending.inspectionsToReview,
+    "/inspections": pending.inspectionsToReview + pending.equipmentAlerts.length,
     "/reports": pending.reportsToReview,
   };
   const urgent = [
@@ -36,6 +36,7 @@ export const Home: React.FC = () => {
     ...(pending.inspectionsToReview > 0
       ? [{ key: "insp", title: `${pending.inspectionsToReview} ${pending.inspectionsToReview === 1 ? "inspección" : "inspecciones"} por revisar`, label: "Revisar y firmar", href: "/inspections" }]
       : []),
+    ...pending.equipmentAlerts.map((a) => ({ key: `eq-${a.id}`, title: a.title, label: a.label, href: "/inspections" })),
     ...(pending.reportsToReview > 0
       ? [{ key: "rep", title: `${pending.reportsToReview} ${pending.reportsToReview === 1 ? "incidente" : "incidentes"} sin revisar`, label: "Revisar reportes", href: "/reports" }]
       : []),

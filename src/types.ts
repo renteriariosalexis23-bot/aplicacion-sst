@@ -654,6 +654,10 @@ export interface Equipment {
   status?: "operative" | "inoperative";
   checklistItems?: { question: string; isCritical: boolean }[];
   createdAt: any; // Firestore Timestamp
+  // Última inspección o checklist de pre-uso (null: nunca se inspeccionó)
+  lastInspectionAt?: any;
+  lastInspectionHasIssues?: boolean;
+  lastInspectionBy?: string;
 }
 
 export interface QuizQuestion {

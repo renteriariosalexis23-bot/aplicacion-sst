@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuth } from "../AuthContext";
+import { Equipment } from "../types";
+import { backfillLastInspection, EquipmentAlert, equipmentAlerts } from "../utils/equipmentStatus";
 import { useCompany } from "../CompanyContext";
 
 export interface PendingItem {
@@ -15,6 +17,8 @@ export interface PendingItems {
   trainingsToComplete: PendingItem[];
   inspectionsToReview: number;
   reportsToReview: number;
+  // Equipos inoperativos, sin inspección reciente o por vencer (solo quienes revisan inspecciones)
+  equipmentAlerts: EquipmentAlert[];
 }
 
 const EMPTY: PendingItems = {
@@ -23,7 +27,11 @@ const EMPTY: PendingItems = {
   trainingsToComplete: [],
   inspectionsToReview: 0,
   reportsToReview: 0,
+  equipmentAlerts: [],
 };
+
+// Equipos cuya última inspección ya se buscó en el historial durante esta sesión
+const backfilled = new Set<string>();
 
 const matchesArea = (target: string | undefined, userArea: string | undefined) => {
   const area = target || "Todas";
@@ -115,6 +123,25 @@ export const usePendingItems = (): PendingItems => {
           ),
           (snapshot) => set({ inspectionsToReview: snapshot.size }),
           onError("inspections"),
+        ),
+      );
+    }
+
+    if (reviewsInspections) {
+      unsubs.push(
+        onSnapshot(
+          query(collection(db, "equipment"), where("companyRuc", "==", companyRuc)),
+          (snapshot) => {
+            const equipments = snapshot.docs.map((d) => ({ id: d.id, ...(d.data() as Equipment) }));
+            equipments
+              .filter((eq) => !("lastInspectionAt" in eq) && !backfilled.has(eq.id))
+              .forEach((eq) => {
+                backfilled.add(eq.id);
+                void backfillLastInspection(eq);
+              });
+            set({ equipmentAlerts: equipmentAlerts(equipments) });
+          },
+          onError("equipment"),
         ),
       );
     }

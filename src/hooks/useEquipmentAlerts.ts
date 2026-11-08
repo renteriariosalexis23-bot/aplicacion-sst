@@ -10,6 +10,8 @@ export const useEquipmentAlerts = () => {
 
   useEffect(() => {
     if (!profile || !selectedCompany) return;
+    // Solo quienes gestionan los equipos reciben estos avisos
+    if (!["employer", "supervisor", "super_admin", "gerencia"].includes(profile.role || "")) return;
     
     const checkAlerts = async () => {
       try {

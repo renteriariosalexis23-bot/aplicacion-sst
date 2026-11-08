@@ -80,6 +80,7 @@ import { Equipments } from "./Equipments";
 import { ImageModal } from "./ui/ImageModal";
 import { isMainAdmin } from "../constants/admin";
 import { SignerBanner } from "./ui/SignerBanner";
+import { markEquipmentInspected } from "../utils/equipmentStatus";
 
 export const Inspections: React.FC = () => {
   const queryClient = useQueryClient();
@@ -728,10 +729,18 @@ export const Inspections: React.FC = () => {
       toast.success("Inspección guardada exitosamente.");
       queryClient.invalidateQueries({ queryKey: ["inspections"] });
 
-      // Notify employers
+      await markEquipmentInspected(targetEquipment?.id, hasIssues, profile?.displayName || profile?.email || "");
+
+      // Aviso a los administradores: con alerta si algún punto salió mal
+      const issueCount = resultsArray.filter((r) => r.isIssue).length;
+      const what = [takingInspection.title, targetEquipment?.name].filter(Boolean).join(" · ");
       await notifyAllEmployers(
-        "Nueva Inspección Completada",
-        `El trabajador ${profile?.displayName || profile?.email} ha completado la inspección: ${takingInspection.title}`,
+        hasIssues
+          ? `⚠ Inspección con ${issueCount} ${issueCount === 1 ? "observación" : "observaciones"}`
+          : "Nueva Inspección Completada",
+        hasIssues
+          ? `${profile?.displayName || profile?.email} marcó ${issueCount} ${issueCount === 1 ? "punto" : "puntos"} con problemas en: ${what}. Revísala y firma.`
+          : `${profile?.displayName || profile?.email} completó la inspección: ${what}. Todo conforme.`,
         "/inspections",
         ruc,
       );

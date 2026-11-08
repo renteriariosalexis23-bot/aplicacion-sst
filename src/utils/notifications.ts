@@ -52,6 +52,9 @@ export const notifyUser = async (
   companyRuc?: string,
   targetId?: string,
 ) => {
+  // Las reglas de Firebase rechazan títulos de más de 100 letras y mensajes de más de 500
+  title = title.slice(0, 100);
+  message = message.slice(0, 500);
   try {
     await addDoc(collection(db, "notifications"), {
       userId,
@@ -75,6 +78,9 @@ export const notifyAllWorkers = async (
   companyRuc?: string,
   targetId?: string,
 ) => {
+  // Las reglas de Firebase rechazan títulos de más de 100 letras y mensajes de más de 500
+  title = title.slice(0, 100);
+  message = message.slice(0, 500);
   try {
     
     let q;
@@ -141,6 +147,9 @@ export const notifyAllEmployers = async (
   companyRuc?: string,
   targetId?: string,
 ) => {
+  // Las reglas de Firebase rechazan títulos de más de 100 letras y mensajes de más de 500
+  title = title.slice(0, 100);
+  message = message.slice(0, 500);
   try {
     
     const usersToNotify: { id: string }[] = [];

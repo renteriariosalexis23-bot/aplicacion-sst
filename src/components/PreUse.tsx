@@ -45,6 +45,7 @@ import { exportToExcel } from "../utils/exportToExcel";
 import { uploadToCloudinary } from "../utils/cloudinary";
 import { ConfirmationModal } from "./ui/ConfirmationModal";
 import { notifyAllEmployers } from "../utils/notifications";
+import { markEquipmentInspected } from "../utils/equipmentStatus";
 
 export const PreUse: React.FC = () => {
   const { profile } = useAuth();
@@ -388,12 +389,21 @@ export const PreUse: React.FC = () => {
       setGeneralPhotoFiles([]);
       setGeneralPhotosPreviews([]);
       
-      // Notify employers
+      const badItems = finalData.items.filter((i: any) => !i.isOk).length;
+      await markEquipmentInspected(inspectingFor.id, badItems > 0, profile.displayName || profile.email || "");
+
+      // Aviso a los administradores: inoperativo, con observaciones o todo conforme
       await notifyAllEmployers(
         !isOperative
-          ? "Equipo Inoperativo Reportado"
-          : "Checklist Pre-Uso Registrado",
-        `El trabajador ${profile.displayName} ha registrado un checklist para el equipo ${inspectingFor.name}${!isOperative ? " y lo marcó como INOPERATIVO." : "."}`,
+          ? "⚠ Equipo inoperativo reportado"
+          : badItems > 0
+            ? `⚠ Pre-uso con ${badItems} ${badItems === 1 ? "observación" : "observaciones"}`
+            : "Checklist Pre-Uso Registrado",
+        !isOperative
+          ? `${profile.displayName} marcó el equipo ${inspectingFor.name} como INOPERATIVO (${badItems} ${badItems === 1 ? "punto" : "puntos"} con problemas). No debe usarse hasta repararlo.`
+          : badItems > 0
+            ? `${profile.displayName} registró el pre-uso de ${inspectingFor.name} con ${badItems} ${badItems === 1 ? "punto" : "puntos"} con problemas (no críticos).`
+            : `${profile.displayName} registró el pre-uso de ${inspectingFor.name}. Todo conforme.`,
         "/preuse",
         ruc,
       );
