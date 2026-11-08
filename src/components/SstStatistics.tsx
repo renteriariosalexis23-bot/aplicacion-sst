@@ -375,8 +375,8 @@ export const SstStatistics: React.FC = () => {
   return (
     <div className="w-full space-y-6">
       <PageHeader
-        title="Estadísticas de Seguridad"
-        description="Cálculo de índices IF, IG, IA (Ley 29783)"
+        title="Estadísticas de SST"
+        description="Índices de frecuencia, gravedad y accidentabilidad de cada mes."
         icon={TrendingUp}
         color="sky"
         actions={

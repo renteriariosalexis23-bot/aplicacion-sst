@@ -228,8 +228,8 @@ export const Drills: React.FC = () => {
   return (
     <div className="w-full">
       <PageHeader
-        title="Simulacros y Brigadas"
-        description="Gestiona las brigadas de emergencia y registra los simulacros realizados."
+        title="Simulacros y brigadas"
+        description="Simulacros realizados y brigadistas de cada emergencia."
         icon={AlertTriangle}
         color="sky"
         actions={

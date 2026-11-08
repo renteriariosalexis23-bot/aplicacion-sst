@@ -1259,8 +1259,8 @@ export const ManagementMeetings = () => {
   return (
     <div className="w-full space-y-6">
       <PageHeader 
-        title="Reuniones y Seguimiento" 
-        description="Lleva el control de tus reuniones y demuestra el avance de tus tareas a Gerencia"
+        title="Reuniones con gerencia" 
+        description="Acuerdos tomados con gerencia y cómo avanzan."
         icon={Users}
         color="blue"
       />

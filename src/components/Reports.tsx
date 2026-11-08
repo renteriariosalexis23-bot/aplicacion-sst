@@ -689,8 +689,8 @@ export const Reports: React.FC = () => {
   return (
     <div className="w-full">
       <PageHeader
-        title="Gestión de Incidentes"
-        description="Reporte y seguimiento de eventos SST"
+        title="Incidentes"
+        description="Reportes de incidentes, accidentes y condiciones inseguras, y su investigación."
         icon={AlertTriangle}
         color="rose"
         actions={

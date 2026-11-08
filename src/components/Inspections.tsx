@@ -1263,8 +1263,8 @@ export const Inspections: React.FC = () => {
   return (
     <div className="w-full space-y-6">
       <PageHeader
-        title="Inspecciones y Checklists"
-        description="Gestión de revisiones de equipos y áreas"
+        title="Inspecciones"
+        description="Equipos, plantillas de inspección e historial de lo revisado."
         icon={ClipboardCheck}
         color="indigo"
         actions={

@@ -462,8 +462,8 @@ export const Feed: React.FC = () => {
   return (
     <div className="w-full">
       <PageHeader
-        title="Muro de Noticias SST"
-        description="Información, noticias y comunicados importantes."
+        title="Muro"
+        description="Avisos y comunicados para todo el personal."
         icon={Newspaper}
         color="sky"
         actions={

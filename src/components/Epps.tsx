@@ -540,8 +540,8 @@ export const Epps: React.FC = () => {
   return (
     <div className="w-full space-y-6">
       <PageHeader
-        title={isWorker ? "Mis EPPs" : "Control de EPPs"}
-        description={isWorker ? "Historial y estado de tus Equipos de Protección" : "Gestión y entrega de Equipos de Protección Personal"}
+        title={isWorker ? "Mis EPP" : "Entrega de EPP"}
+        description={isWorker ? "Lo que te entregaron y cuándo toca renovarlo." : "Entregas al personal, renovaciones y catálogo de equipos de protección."}
         icon={Package}
         color="sky"
         actions={

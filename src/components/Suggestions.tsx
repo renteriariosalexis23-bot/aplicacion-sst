@@ -279,8 +279,8 @@ export const Suggestions: React.FC = () => {
   return (
     <div className="w-full space-y-8">
       <PageHeader
-        title="Buzón de Sugerencias SST"
-        description="Tu voz es fundamental para un entorno de trabajo más seguro."
+        title="Buzón SST"
+        description="Sugerencias, consultas y reportes del personal. Pueden enviarse sin nombre."
         icon={MessageSquare}
         color="blue"
       />

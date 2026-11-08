@@ -264,8 +264,8 @@ export const MedicalExamsManager: React.FC = () => {
   return (
     <div className="w-full">
       <PageHeader
-        title="Exámenes Médicos"
-        description={selectedCompany.businessName}
+        title="Exámenes médicos"
+        description="Aptitud de cada trabajador y próximos vencimientos."
         icon={FileText}
         color="emerald"
         actions={

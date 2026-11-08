@@ -169,8 +169,8 @@ export const Vehicles: React.FC = () => {
   return (
     <div className="w-full space-y-6">
       <PageHeader
-        title={profile?.role === "worker" ? "Mi Vehículo y Brevete" : "Control de Vehículos y Brevetes"}
-        description="Gestión de licencias de conducir, SOAT y datos de movilidad."
+        title={profile?.role === "worker" ? "Mi vehículo y brevete" : "Vehículos y brevetes"}
+        description="Licencias de conducir, SOAT y vehículos del personal de Despacho."
         icon={Car}
         color="indigo"
       />

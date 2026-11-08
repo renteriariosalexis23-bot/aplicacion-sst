@@ -281,8 +281,8 @@ export const Inductions: React.FC = () => {
   return (
     <div className="w-full space-y-6">
       <PageHeader
-        title="Inducciones de Nuevo Personal"
-        description="Registro Legal Obligatorio para ingreso de trabajadores"
+        title="Inducciones"
+        description="Inducción obligatoria del personal nuevo antes de empezar a trabajar."
         icon={UserPlus}
         color="sky"
         actions={

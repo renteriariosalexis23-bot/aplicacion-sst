@@ -460,8 +460,8 @@ export const PreUse: React.FC = () => {
   return (
     <div className="w-full space-y-6">
       <PageHeader
-        title="Checklist Pre-Uso de Equipos"
-        description="Inspecciones diarias para vehículos y maquinaria operativa"
+        title="Pre-uso de equipos"
+        description="Checklist diario antes de usar un vehículo o una máquina."
         icon={Truck}
       />
 

@@ -554,8 +554,8 @@ export const MandatoryRegisters: React.FC = () => {
   return (
     <div className="space-y-8">
       <PageHeader
-        title={`Registros Legales - ${selectedCompany?.businessName || "Todas las Empresas"}`}
-        description="Gestione sus registros obligatorios SST"
+        title="Registros obligatorios"
+        description="Los 10 registros que exige la R.M. 050-2013-TR, con sus documentos."
         icon={BookText}
         color="indigo"
       />

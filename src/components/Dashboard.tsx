@@ -768,8 +768,8 @@ export const Dashboard: React.FC = () => {
       )}
 
       <PageHeader
-        title="Panel de Control Directivo"
-        description={`Dashboard avanzado predictivo y preventivo de riesgos laborales para ${globalView ? "todas las empresas" : selectedCompany?.businessName || "su empresa"}`}
+        title="Panel directivo"
+        description={`Indicadores de seguridad de ${globalView ? "todas las empresas" : selectedCompany?.businessName || "la empresa"}.`}
         icon={BarChart2}
         color="blue"
         actions={

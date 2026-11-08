@@ -470,7 +470,7 @@ export const Committee: React.FC = () => {
 
       <PageHeader
         title="Comité de SST"
-        description="Miembros, reuniones y seguimiento de acuerdos"
+        description="Miembros, reuniones y acuerdos del comité."
         icon={UsersRound}
         color="indigo"
         actions={

@@ -770,7 +770,7 @@ export const Trainings: React.FC = () => {
     <div className="w-full relative">
       <PageHeader
         title="Capacitaciones"
-        description="Gestión de capacitaciones y entrenamientos"
+        description="Charlas y cursos: quién los completó y quién falta."
         icon={BookOpen}
         color="sky"
         actions={

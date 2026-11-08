@@ -141,8 +141,8 @@ export const Companies: React.FC = () => {
   return (
     <div className="w-full">
       <PageHeader
-        title="Gestión de Empresas"
-        description="Administra las empresas registradas en el sistema."
+        title="Empresas"
+        description="Datos de cada empresa: RUC, dirección, actividad y áreas."
         icon={Building2}
         color="purple"
         actions={

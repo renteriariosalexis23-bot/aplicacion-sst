@@ -588,8 +588,8 @@ export const Documents: React.FC = () => {
       ) : (
         <>
           <PageHeader
-            title="Documentos Oficiales SST"
-            description="Gestión y control de documentos del sistema"
+            title="Documentos"
+            description="Políticas, reglamentos y procedimientos para leer y firmar."
             icon={FileText}
             color="emerald"
             actions={

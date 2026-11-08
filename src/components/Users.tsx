@@ -546,8 +546,8 @@ export const Users: React.FC = () => {
   return (
     <div className="w-full">
       <PageHeader
-        title="Directorio de Usuarios"
-        description="Gestión y control de cuentas de usuarios en el sistema"
+        title="Directorio"
+        description="Cuentas del personal, sus roles y accesos."
         icon={UsersRound}
         color="indigo"
         actions={

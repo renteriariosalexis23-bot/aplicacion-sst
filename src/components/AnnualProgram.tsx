@@ -436,8 +436,8 @@ export const AnnualProgram: React.FC = () => {
   return (
     <div className="w-full space-y-6">
       <PageHeader
-        title="Programa Anual SST"
-        description="Planificación y seguimiento de actividades del año"
+        title="Programa anual de SST"
+        description="Actividades planificadas del año y su avance."
         icon={CalendarIcon}
         color="purple"
         actions={
