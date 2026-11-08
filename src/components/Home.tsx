@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -42,8 +42,8 @@ export const Home: React.FC = () => {
     ["employer", "super_admin", "gerencia"].includes(profile?.role || "") &&
     companies.length > 1;
 
+  const [showUrgent, setShowUrgent] = useState(false);
   const modules = navigation.filter((item) => item.href !== "/" && item.art);
-  const featured = modules.filter((item) => item.featured);
 
   return (
     <div className="pb-6">
@@ -60,7 +60,7 @@ export const Home: React.FC = () => {
         )}
         .
       </h1>
-      <p className="mt-2 text-[15px] text-slate-500">
+      <p className="mt-2 hidden text-[15px] text-slate-500 lg:block">
         {urgent.length > 0 ? (
           <>
             Tienes <b className="text-slate-900">{urgent.length} {urgent.length === 1 ? "tema" : "temas"}</b> por atender.
@@ -72,7 +72,7 @@ export const Home: React.FC = () => {
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start lg:gap-8">
         {/* Columna lateral (en celular va primero): lo urgente, empresas y accesos */}
-        <aside className="min-w-0 space-y-5 lg:order-2">
+        <aside className="hidden min-w-0 space-y-5 lg:order-2 lg:block">
           {urgent.length > 0 && (
             <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
               <h2 className="mb-1 text-[17px] font-bold tracking-[-0.02em] text-slate-900">
@@ -131,34 +131,6 @@ export const Home: React.FC = () => {
             </section>
           )}
 
-          {/* Celular: accesos rápidos deslizables */}
-          {featured.length > 0 && (
-            <section className="lg:hidden">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Accesos rápidos</p>
-              <div className="tab-bar -mx-3 flex gap-2.5 px-3 pb-1">
-                {featured.map((item) => (
-                  <Link
-                    key={item.href}
-                    to={item.href}
-                    className="relative flex w-[104px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white"
-                  >
-                    <span className="flex h-[64px] items-center justify-center overflow-hidden bg-[#f1f1f1]">
-                      <img src={item.art} alt="" className="brand-art h-[74px] w-auto max-w-none object-contain" />
-                    </span>
-                    {counts[item.href] > 0 && (
-                      <span className="absolute right-1.5 top-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-[#c23a4f] px-1.5 text-[11px] font-bold text-white">
-                        {counts[item.href]}
-                      </span>
-                    )}
-                    <span className="px-2 py-2 text-center text-[12px] font-semibold leading-tight text-slate-800">
-                      {item.tileName || item.name}
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            </section>
-          )}
-
           {/* Computadora: todos los módulos en una lista */}
           <section className="hidden rounded-2xl border border-slate-200 bg-white p-2 lg:block">
             <p className="px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Módulos</p>
@@ -184,6 +156,37 @@ export const Home: React.FC = () => {
 
         {/* El Muro: anuncios y comunicados, como en una red social */}
         <section className="min-w-0 lg:order-1">
+          {/* Celular: lo urgente en una sola línea que se abre al tocarla, para que el Muro quede arriba */}
+          {urgent.length > 0 && (
+            <div className="mb-4 overflow-hidden rounded-2xl border border-slate-200 bg-white lg:hidden">
+              <button
+                onClick={() => setShowUrgent((v) => !v)}
+                className="flex w-full items-center gap-3 px-4 py-3 text-left"
+                aria-expanded={showUrgent}
+              >
+                <span className="grid h-7 min-w-7 place-items-center rounded-full bg-[#c23a4f] px-2 text-sm font-bold text-white">
+                  {urgent.length}
+                </span>
+                <span className="flex-1 text-sm font-semibold text-slate-800">
+                  {urgent.length === 1 ? "Tema por atender" : "Temas por atender"}
+                </span>
+                <span className="text-xs font-bold text-blue-600">{showUrgent ? "Ocultar" : "Ver"}</span>
+              </button>
+              {showUrgent && (
+                <div className="divide-y divide-slate-100 border-t border-slate-100 px-4">
+                  {urgent.map((u) => (
+                    <Link key={u.key} to={u.href} className="flex items-center gap-3 py-2.5">
+                      <span className="min-w-0 flex-1 leading-tight">
+                        <b className="block truncate text-sm font-semibold text-slate-800">{u.title}</b>
+                        <small className="text-xs text-slate-500">{u.label}</small>
+                      </span>
+                      <span className="shrink-0 text-xs font-bold text-blue-600">Ir →</span>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
           <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Muro</h2>
           <Feed embedded />
         </section>
