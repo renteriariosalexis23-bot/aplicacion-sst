@@ -13,6 +13,7 @@ import { Loader2, Save, UserCircle, LogOut, FileSignature, Trash2 } from "lucide
 import { Company } from "../types";
 import SignatureCanvas from "react-signature-canvas";
 import { uploadToCloudinary } from "../utils/cloudinary";
+import { subscribeUserAreas } from "../utils/companyAreas";
 
 export const Profile: React.FC = () => {
   const { profile, logout } = useAuth();
@@ -62,18 +63,8 @@ export const Profile: React.FC = () => {
           }
         });
 
-        const unsubscribeUsers = onSnapshot(query(collection(db, "users"), where("companyRuc", "==", profile.companyRuc)), (snapshot) => {
-          const uniqueAreas = new Set<string>();
-          snapshot.forEach(doc => {
-             const data = doc.data();
-             if (data.department && data.department.trim() !== '') {
-                uniqueAreas.add(data.department.trim());
-             }
-          });
-          setCompanyAreas(prev => {
-            const combined = Array.from(new Set([...prev, ...Array.from(uniqueAreas)]));
-            return combined.sort();
-          });
+        const unsubscribeUsers = subscribeUserAreas(profile.companyRuc, profile?.role, (areas) => {
+          setCompanyAreas((prev) => Array.from(new Set([...prev, ...areas])).sort());
         });
 
         return () => {

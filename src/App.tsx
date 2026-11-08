@@ -45,18 +45,13 @@ import { useKeyboardNavigation } from "./utils/useKeyboardNavigation";
 
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { isMainAdmin } from "./constants/admin";
-import { isDispatchWorker } from "./constants/navigation";
 
 
-// Vehículos y Pre-Uso: un trabajador solo entra si es de Despacho (motorizado)
-const DispatchOnly: React.FC<{ children: React.ReactElement }> = ({ children }) => {
-  const { profile } = useAuth();
-  if (profile?.role === "worker" && !isDispatchWorker(profile)) return <Navigate to="/" replace />;
-  return children;
-};
+
 
 
 const Login = lazy(() => import("./components/Login").then(m => ({ default: m.Login })));
+const VerifyDocument = lazy(() => import("./components/VerifyDocument").then(m => ({ default: m.VerifyDocument })));
 const Layout = lazy(() => import("./components/Layout").then(m => ({ default: m.Layout })));
 const Feed = lazy(() => import("./components/Feed").then(m => ({ default: m.Feed })));
 const Home = lazy(() => import("./components/Home").then(m => ({ default: m.Home })));
@@ -220,6 +215,8 @@ const AppContent: React.FC = () => {
           }>
             <Routes>
               <Route path="/login" element={<LoginRoute />} />
+              {/* Pública: la abre el código QR de los PDF */}
+              <Route path="/verificar/:id" element={<VerifyDocument />} />
 
               <Route
                 path="/"
@@ -243,7 +240,7 @@ const AppContent: React.FC = () => {
                 <Route path="trainings" element={<Trainings />} />
                 <Route path="inspections" element={<Inspections />} />
                 <Route path="epps" element={<Epps />} />
-                <Route path="preuse" element={<DispatchOnly><PreUse /></DispatchOnly>} />
+                <Route path="preuse" element={<PreUse />} />
                 <Route path="qr" element={<QRLanding />} />
                 <Route path="equipments" element={<Equipments />} />
                 <Route path="suggestions" element={<Suggestions />} />
@@ -255,7 +252,7 @@ const AppContent: React.FC = () => {
                 <Route path="sst-statistics" element={<SstStatistics />} />
                 <Route path="inductions" element={<Inductions />} />
                 <Route path="drills" element={<Drills />} />
-                <Route path="vehicles" element={<DispatchOnly><Vehicles /></DispatchOnly>} />
+                <Route path="vehicles" element={<Vehicles />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Route>
               <Route path="*" element={<Navigate to="/" replace />} />

@@ -58,9 +58,12 @@ export const CommitteeMembersTab: React.FC<{ mode?: Mode }> = ({ mode = "committ
     if (!selectedCompany) return;
     setLoading(true);
 
-    getDocs(query(collection(db, "users"), where("companyRuc", "==", selectedCompany.ruc)))
-      .then((snap) => setUsers(snap.docs.map((d) => ({ uid: d.id, ...d.data() }) as UserProfile)))
-      .catch((err) => console.error("Error fetching users", err));
+    // La lista de trabajadores solo la necesitan quienes eligen miembros o supervisores
+    if (isAdmin || profile?.role === "supervisor") {
+      getDocs(query(collection(db, "users"), where("companyRuc", "==", selectedCompany.ruc)))
+        .then((snap) => setUsers(snap.docs.map((d) => ({ uid: d.id, ...d.data() }) as UserProfile)))
+        .catch((err) => console.error("Error fetching users", err));
+    }
 
     const qMembers = query(collection(db, "committee_members"), where("companyRuc", "==", selectedCompany.ruc));
     const unsubscribe = onSnapshot(

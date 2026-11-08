@@ -10,6 +10,9 @@ import { writeBatch, doc as firestoreDoc,
 import { db } from "../firebase";
 import { MAIN_ADMIN_EMAIL } from "../constants/admin";
 
+// Roles cuyo perfil puede leer cualquier persona de la empresa (para enviarles avisos)
+const ADMIN_ROLES = ["employer", "super_admin", "supervisor", "gerencia"];
+
 export const deleteNotificationsByTarget = async (targetId: string) => {
   try {
     const q = query(
@@ -157,6 +160,7 @@ export const notifyAllEmployers = async (
     const mainAdminQ = query(
       collection(db, "users"),
       where("email", "==", MAIN_ADMIN_EMAIL),
+      where("role", "in", ADMIN_ROLES),
     );
     const maSnap = await getDocs(mainAdminQ);
     maSnap.docs.forEach((d) => {
@@ -165,14 +169,16 @@ export const notifyAllEmployers = async (
     });
 
     // Fetch employers for the company
+    // Solo perfiles de administradores: un trabajador no puede leer los perfiles de otros trabajadores
     let empQ;
     if (companyRuc && companyRuc !== "ALL") {
       empQ = query(
         collection(db, "users"),
         where("companyRuc", "==", companyRuc),
+        where("role", "in", ADMIN_ROLES),
       );
     } else {
-      empQ = query(collection(db, "users"));
+      empQ = query(collection(db, "users"), where("role", "in", ADMIN_ROLES));
     }
     const empSnap = await getDocs(empQ);
     empSnap.docs.forEach((d) => {

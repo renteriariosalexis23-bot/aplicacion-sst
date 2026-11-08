@@ -2,6 +2,7 @@ import { jsPDF, jsPDFOptions } from "jspdf";
 import { format } from "date-fns";
 import { Company } from "../types";
 import { CompanyKey, resolveBrand } from "./brand";
+import type { PdfVerification } from "./pdfVerification";
 
 // Hojas membretadas oficiales (public/membretes, A4 a 150 ppp). top/bottom marcan,
 // en mm, el espacio libre entre el membrete de arriba y el de abajo.
@@ -27,6 +28,8 @@ export interface PdfLayout {
 
 let currentKey: CompanyKey = "ih";
 let currentCompanyName = "";
+let currentCompanyRuc = "";
+let currentIssuerName = "";
 let currentLogoSrc = "/logos/image-health.png";
 const logoCache: Record<string, { data: string; ratio: number }> = {};
 let currentBrandRgb: [number, number, number] = [134, 16, 121];
@@ -60,9 +63,19 @@ export const setLetterheadCompany = (company?: Company | null) => {
   currentKey = brand.key;
   currentBrandRgb = hexToRgb(brand.main);
   currentCompanyName = company?.businessName || "";
+  currentCompanyRuc = company?.ruc || "";
   currentLogoSrc = brand.logo;
   void loadImage(currentKey);
 };
+
+// Quien está conectado: figura como "generado por" en la verificación del PDF
+export const setPdfIssuer = (name?: string) => {
+  currentIssuerName = name || "";
+};
+export const getPdfContext = () => ({
+  company: { name: currentCompanyName, ruc: currentCompanyRuc },
+  issuerName: currentIssuerName,
+});
 
 // Por si un PDF se genera antes de que termine la precarga
 export const ensureLetterheadLoaded = () => loadImage(currentKey);
@@ -184,20 +197,39 @@ export const drawDocTitle = (doc: jsPDF, title: string, subtitle?: string): numb
   return y + 6;
 };
 
-// Pie de cada página, entre el contenido y el membrete de abajo:
-// fecha de generación a la izquierda y "Página X de Y" a la derecha.
-export const addPageNumbers = (doc: jsPDF) => {
+// Pie de cada página, entre el contenido y el membrete de abajo. Con verificación lleva el
+// código QR a la izquierda y la dirección para comprobar el documento; a la derecha,
+// "Página X de Y" y la fecha de generación.
+export const addPageNumbers = (doc: jsPDF, verification?: PdfVerification | null) => {
   const layout = getLayout(doc);
   const pages = doc.getNumberOfPages();
   const generated = `Generado el ${format(new Date(), "dd/MM/yyyy HH:mm")}`;
+  const qrSize = 10;
   for (let i = 1; i <= pages; i++) {
     doc.setPage(i);
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(7.5);
     doc.setTextColor(120, 120, 120);
-    const y = Math.min(layout.bottom + 5, layout.pageHeight - 6);
-    doc.text(generated, layout.left, y);
-    doc.text(`Página ${i} de ${pages}`, layout.right, y, { align: "right" });
+    if (verification) {
+      const top = Math.min(layout.bottom + 1, layout.pageHeight - qrSize - 2);
+      doc.addImage(verification.qr, "PNG", layout.left, top, qrSize, qrSize, "qr-verificacion", "FAST");
+      const textX = layout.left + qrSize + 2.5;
+      doc.setFontSize(7);
+      doc.setTextColor(80, 80, 80);
+      doc.text("Verifique la autenticidad de este documento escaneando el código QR o en:", textX, top + 3.6);
+      doc.setFontSize(6.5);
+      doc.setTextColor(...layout.brandRgb);
+      doc.text(verification.url, textX, top + 7.2);
+      doc.setTextColor(120, 120, 120);
+      doc.setFontSize(7.5);
+      doc.text(`Página ${i} de ${pages}`, layout.right, top + 3.6, { align: "right" });
+      doc.setFontSize(6.5);
+      doc.text(generated, layout.right, top + 7.2, { align: "right" });
+    } else {
+      doc.setFontSize(7.5);
+      const y = Math.min(layout.bottom + 5, layout.pageHeight - 6);
+      doc.text(generated, layout.left, y);
+      doc.text(`Página ${i} de ${pages}`, layout.right, y, { align: "right" });
+    }
   }
   doc.setTextColor(0, 0, 0);
 };

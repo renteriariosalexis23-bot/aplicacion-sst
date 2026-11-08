@@ -25,7 +25,9 @@ import {
   addPageNumbers,
   getCurrentCompanyName,
   loadCompanyLogo,
+  getPdfContext,
 } from "./pdfLetterhead";
+import { registerPdf, VerificationInfo } from "./pdfVerification";
 
 
 
@@ -109,7 +111,24 @@ const addHeader = (doc: jsPDF, title: string, subtitle?: string) =>
 /**
  * Pie de página: fecha de generación y "Página X de Y".
  */
-const addFooter = (doc: jsPDF) => addPageNumbers(doc);
+const addFooter = async (doc: jsPDF, info: VerificationInfo) => {
+  const { company, issuerName } = getPdfContext();
+  const verification = await registerPdf(info, company, issuerName);
+  addPageNumbers(doc, verification);
+};
+
+const LEGAL_REGISTER_NAMES: Record<string, string> = {
+  accident: "Registro de accidentes de trabajo",
+  disease: "Registro de enfermedades ocupacionales",
+  incident: "Registro de incidentes peligrosos e incidentes",
+  medical_exam: "Registro de exámenes médicos ocupacionales",
+  monitoring: "Registro de monitoreo de agentes",
+  inspection: "Registro de inspecciones internas de SST",
+  equipment: "Registro de equipos de seguridad o emergencia",
+  training: "Registro de inducción, capacitación y simulacros",
+  statistics: "Registro de estadísticas de SST",
+  audit: "Registro de auditorías",
+};
 
 /**
  * Tabla de datos de dos columnas con título a todo el ancho. Devuelve la posición siguiente.
@@ -299,7 +318,11 @@ export const generateDocumentCargoPDF = async (
     );
   }
 
-  addFooter(doc);
+  await addFooter(doc, {
+    kind: "Cargo de recepción de documento",
+    title: document.title,
+    people: [{ role: "Trabajador", name: signature.userName, dni: signature.userDni }],
+  });
   return doc.output("blob");
 };
 
@@ -436,7 +459,14 @@ export const generatePreUsePDF = async (
     doc.setTextColor(0, 0, 0);
   }
 
-  addFooter(doc);
+  await addFooter(doc, {
+    kind: "Checklist de pre-uso de equipos",
+    title: [preUse.equipmentName, preUse.equipmentCode].filter(Boolean).join(" · "),
+    people: [
+      { role: "Operador", name: preUse.workerName, dni: preUse.workerDni },
+      { role: "Supervisor SST", name: preUse.supervisorName, dni: preUse.supervisorDni },
+    ],
+  });
   return doc.output("blob");
 };
 
@@ -502,7 +532,14 @@ export const generateEppDeliveryPdf = async (
     { title: "Supervisor SST", image: supervisorSig, name: delivery.supervisorName || "Supervisor", dni: delivery.supervisorDni, date: dateText },
   ]);
 
-  addFooter(doc);
+  await addFooter(doc, {
+    kind: "Acta de entrega de EPP",
+    title: delivery.items.map((item) => item.name).join(", "),
+    people: [
+      { role: "Trabajador", name: delivery.workerName, dni: delivery.workerDni },
+      { role: "Entregado por", name: delivery.supervisorName, dni: delivery.supervisorDni },
+    ],
+  });
   doc.save(
     `Entrega_EPP_${delivery.workerDni}_${when ? when.toISOString().split("T")[0] : "Doc"}.pdf`,
   );
@@ -557,7 +594,10 @@ export const generateDigitalSignatureConsentPDF = async (
     }
   }
 
-  addFooter(doc);
+  await addFooter(doc, {
+    kind: "Declaración jurada de uso de firma electrónica",
+    people: [{ role: "Declarante", name: profile.displayName, dni: profile.dni }],
+  });
   doc.save(`Declaracion_Jurada_${profile.dni || profile.uid}.pdf`);
 };
 
@@ -627,7 +667,11 @@ export const generateReportPDF = async (report: Report) => {
     await addLegalRegisterToDoc(doc, report.legalRegister);
   }
 
-  addFooter(doc);
+  await addFooter(doc, {
+    kind: "Reporte de incidente / condición",
+    title: [report.id, report.location].filter(Boolean).join(" · "),
+    people: [{ role: "Reportado por", name: report.reportedByName }],
+  });
   doc.save(`Reporte_SST_${report.id || format(new Date(), "yyyyMMdd")}.pdf`);
 };
 
@@ -1475,7 +1519,11 @@ export const generateLegalRegisterPDF = async (lr: any) => {
   await ensureLetterheadLoaded();
   const doc = createLetterheadDoc();
   await addLegalRegisterToDoc(doc, lr);
-  addFooter(doc);
+  await addFooter(doc, {
+    kind: LEGAL_REGISTER_NAMES[lr.type] || "Registro legal obligatorio",
+    title: lr.registerNumber ? `N° ${lr.registerNumber}` : "",
+    people: (lr.responsibles || []).map((r: any) => ({ role: r.position || "Responsable", name: r.name })),
+  });
   doc.save(`Registro_Legal_${lr.type}_${lr.registerNumber}.pdf`);
 };
 
@@ -1572,7 +1620,14 @@ export const generateInspectionPDF = async (inspection: Inspection) => {
     { title: "Supervisor SST", image: supervisorSig, name: inspection.supervisorName || "Pendiente de firma", dni: inspection.supervisorDni, date: dateText },
   ]);
 
-  addFooter(doc);
+  await addFooter(doc, {
+    kind: "Registro de inspección",
+    title: [inspection.templateTitle, inspection.equipmentName].filter(Boolean).join(" · "),
+    people: [
+      { role: "Inspector", name: inspection.workerName, dni: inspection.workerDni },
+      { role: "Supervisor SST", name: inspection.supervisorName, dni: inspection.supervisorDni },
+    ],
+  });
   doc.save(
     `Inspeccion_${inspection.templateTitle.replace(/\s+/g, "_")}_${format(new Date(), "yyyyMMdd")}.pdf`,
   );
@@ -1664,6 +1719,27 @@ export const generateTrainingCertificatePDF = async (
   doc.text(getCurrentCompanyName() || "Seguridad y Salud en el Trabajo", cx, 190, { align: "center" });
   doc.setTextColor(0, 0, 0);
 
+  // Código QR de verificación, abajo a la derecha dentro del marco
+  const { company, issuerName } = getPdfContext();
+  const verification = await registerPdf(
+    {
+      kind: "Certificado de capacitación",
+      title: training.title,
+      people: [{ role: "Participante", name: completion.userName, dni: completion.userDni }],
+    },
+    company,
+    issuerName,
+  );
+  if (verification) {
+    const size = 20;
+    doc.addImage(verification.qr, "PNG", 281 - size, 194 - size - 4, size, size, "qr-verificacion", "FAST");
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(6);
+    doc.setTextColor(110, 110, 110);
+    doc.text("Verificar autenticidad", 281 - size / 2, 193, { align: "center" });
+    doc.setTextColor(0, 0, 0);
+  }
+
   doc.save(`Certificado_${(completion.userName || "Trabajador").replace(/\s+/g, "_")}.pdf`);
 };
 
@@ -1748,7 +1824,14 @@ export const generateInductionPDF = async (induction: Induction, INDUCTION_SECTI
     { title: "Responsable de la inducción", image: await load(induction.supervisorSignatureUrl), name: induction.supervisorName || induction.trainerName || "", dni: induction.supervisorDni, date: dateText },
   ]);
 
-  addFooter(doc);
+  await addFooter(doc, {
+    kind: "Registro de inducción",
+    title: induction.workerPosition || "",
+    people: [
+      { role: "Trabajador", name: induction.workerName, dni: induction.workerDni },
+      { role: "Responsable de la inducción", name: induction.supervisorName || induction.trainerName, dni: induction.supervisorDni },
+    ],
+  });
   doc.save(`Induccion_${induction.workerName.replace(/\s+/g, "_")}.pdf`);
 };
 
@@ -1845,7 +1928,11 @@ export const generateCommitteeActPdf = async (
     );
   }
 
-  addFooter(doc);
+  await addFooter(doc, {
+    kind: "Acta de reunión del Comité de SST",
+    title: `${title} · ${longDate}`,
+    people: attendees.map((a) => ({ role: a.role || "Miembro Titular", name: a.name, dni: a.dni })),
+  });
   doc.save(`Acta_CSST_${meeting.meetingNumber || "001"}.pdf`);
 };
 
@@ -1891,7 +1978,10 @@ export const generateDrillReportPDF = async (drill: any, companyName: string) =>
       { title: "Responsable de SST", image: null },
     ]);
 
-    addFooter(doc);
+    await addFooter(doc, {
+      kind: "Acta e informe de simulacro",
+      title: drill.title || "",
+    });
     doc.save(`Informe_Simulacro_${(drill.title || "simulacro").replace(/\s+/g, "_")}.pdf`);
   } catch (error) {
     console.error("Error generating Drill PDF:", error);
@@ -1950,6 +2040,13 @@ export const generateManagementMeetingPDF = async (meeting: any, agreements: any
     { title: "Responsable SST", image: await load(meeting.sstSignature), name: meeting.sstSignerName, dni: meeting.sstSignerDni },
   ]);
 
-  addFooter(doc);
+  await addFooter(doc, {
+    kind: "Acta de reunión de gerencia",
+    title: [meeting.title, meeting.date].filter(Boolean).join(" · "),
+    people: [
+      { role: "Gerencia General", name: meeting.gerenciaSignerName, dni: meeting.gerenciaSignerDni },
+      { role: "Responsable SST", name: meeting.sstSignerName, dni: meeting.sstSignerDni },
+    ],
+  });
   return URL.createObjectURL(doc.output("blob"));
 };

@@ -242,9 +242,18 @@ service cloud.firestore {
     // ===============================================================
 
     match /users/{userId} {
-      // Users can read their own profile. Employers can read all profiles to see workers.
-      // Workers can read profiles of users in the same company.
-      allow read: if isAuthenticated();
+      // Cada perfil tiene DNI, teléfono, fecha de nacimiento y firma. Pueden leerlo:
+      // - la propia persona;
+      // - los administradores (empleador, gerencia, super admin);
+      // - el supervisor de SST, los de su misma empresa;
+      // - cualquier persona conectada, solo si el perfil es de un administrador o supervisor
+      //   (para poder enviarles avisos); un trabajador no lee el perfil de otro trabajador.
+      allow read: if isAuthenticated() && (
+        isOwner(userId) ||
+        isEmployer() ||
+        (isSupervisor() && isEmployeeOf(resource.data.get('companyRuc', ''))) ||
+        resource.data.get('role', '') in ['employer', 'super_admin', 'supervisor', 'gerencia', 'admin']
+      );
       
       // A user can create their own profile. 
       // Only the default admin can create an 'employer' role initially, or an existing employer can create another employer.
@@ -733,6 +742,24 @@ service cloud.firestore {
       allow write: if isAuthenticated();
     }
     
+    // Registro de cada PDF generado; su código QR abre /verificar/<id> sin iniciar sesión.
+    // Se lee de uno en uno (nunca se listan) y no se puede cambiar ni borrar.
+    match /pdf_verifications/{verificationId} {
+      allow get: if true;
+      allow list: if false;
+      allow create: if isAuthenticated() &&
+        request.resource.data.keys().hasOnly(['kind', 'title', 'companyName', 'companyRuc', 'people', 'issuedAt', 'issuedBy', 'issuedByName']) &&
+        request.resource.data.issuedBy == request.auth.uid &&
+        request.resource.data.issuedAt == request.time &&
+        request.resource.data.issuedByName == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('displayName', '') &&
+        isEmployeeOf(request.resource.data.companyRuc) &&
+        request.resource.data.kind is string && request.resource.data.kind.size() > 0 && request.resource.data.kind.size() <= 150 &&
+        request.resource.data.title is string && request.resource.data.title.size() <= 300 &&
+        request.resource.data.companyName is string && request.resource.data.companyName.size() <= 200 &&
+        request.resource.data.people is list && request.resource.data.people.size() <= 20;
+      allow update, delete: if false;
+    }
+
     match /committee_members/{memberId} {
       allow read: if isAuthenticated();
       allow write: if isAuthenticated() && (isDefaultAdmin() || isEmployer() || isSupervisor());

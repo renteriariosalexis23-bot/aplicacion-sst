@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
+import { Outlet, Link, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { setPdfIssuer } from "../utils/pdfLetterhead";
 import { useAuth } from "../AuthContext";
 import { useCompany } from "../CompanyContext";
 import { CompanyLogo } from "./CompanyLogo";
@@ -46,6 +47,11 @@ export const Layout: React.FC = () => {
   React.useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [location.pathname]);
+
+  // Nombre que figura como "generado por" en la verificación de los PDF
+  React.useEffect(() => {
+    setPdfIssuer(profile?.displayName);
+  }, [profile?.displayName]);
 
   // Barras de pestañas: quita el borde desvanecido cuando ya se ve la última pestaña
   React.useEffect(() => {
@@ -167,6 +173,11 @@ export const Layout: React.FC = () => {
     (item) => item.href !== "/" && location.pathname.startsWith(item.href),
   );
   const currentItem = matchedItem && labelForCompany(matchedItem, selectedCompany);
+  // Un módulo que no está en el menú de esta persona tampoco se abre escribiendo la dirección.
+  // "Equipos" solo existe dentro de Inspecciones para administradores.
+  const isBlockedRoute =
+    (!!matchedItem && !filteredNavigation.some((item) => item.href === matchedItem.href)) ||
+    (profile?.role === "worker" && location.pathname.startsWith("/equipments"));
   const canSwitchCompany =
     ["employer", "super_admin", "gerencia"].includes(profile?.role || "") &&
     companies.length > 1;
@@ -471,7 +482,7 @@ export const Layout: React.FC = () => {
 
       {/* Contenido */}
       <main className="mx-auto max-w-7xl px-3 pb-32 pt-4 md:px-8 md:pb-12 md:pt-6 print:max-w-none print:p-0">
-        <Outlet />
+        {isBlockedRoute ? <Navigate to="/" replace /> : <Outlet />}
       </main>
 
       {/* Navegación inferior en móvil */}

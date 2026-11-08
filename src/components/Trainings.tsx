@@ -47,6 +47,7 @@ import { generateTrainingCertificatePDF } from "../utils/pdfGenerator";
 import { uploadToCloudinary } from "../utils/cloudinary";
 import { exportToExcel } from "../utils/exportToExcel";
 import { SignerBanner } from "./ui/SignerBanner";
+import { subscribeUserAreas } from "../utils/companyAreas";
 
 export const Trainings: React.FC = () => {
   const { profile } = useAuth();
@@ -93,19 +94,9 @@ export const Trainings: React.FC = () => {
     });
 
     // Fallback/Enhancement by fetching from users
-    const unsubscribeUsers = onSnapshot(query(collection(db, "users"), where("companyRuc", "==", ruc)), (snapshot) => {
-      const uniqueAreas = new Set<string>();
-      snapshot.forEach(doc => {
-         const data = doc.data();
-         if (data.department && data.department.trim() !== '') {
-            uniqueAreas.add(data.department.trim());
-         }
-      });
-      setCompanyAreas(prev => {
-        const combined = Array.from(new Set([...prev, ...Array.from(uniqueAreas)]));
-        return combined.sort();
-      });
-    });
+    const unsubscribeUsers = subscribeUserAreas(ruc, profile?.role, (areas) => {
+          setCompanyAreas((prev) => Array.from(new Set([...prev, ...areas])).sort());
+        });
 
     return () => {
        unsubscribeCompany();

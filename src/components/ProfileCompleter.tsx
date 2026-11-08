@@ -15,6 +15,7 @@ import {
   handleFirestoreError,
   OperationType,
 } from "../utils/firestoreErrorHandler";
+import { subscribeUserAreas } from "../utils/companyAreas";
 
 export const ProfileCompleter: React.FC = () => {
   const { profile, logout } = useAuth();
@@ -58,22 +59,10 @@ export const ProfileCompleter: React.FC = () => {
       });
 
       // Fallback/Enhancement by fetching from users
-      const unsubscribeUsers = onSnapshot(query(collection(db, "users"), where("companyRuc", "==", profile.companyRuc)), (snapshot) => {
-        const uniqueAreas = new Set<string>();
-        if (profile?.role === "gerencia") {
-          uniqueAreas.add("Gerencia General");
-        }
-        snapshot.forEach(doc => {
-           const data = doc.data();
-           if (data.department && data.department.trim() !== '') {
-              uniqueAreas.add(data.department.trim());
-           }
+      const unsubscribeUsers = subscribeUserAreas(profile.companyRuc, profile?.role, (areas) => {
+          if (profile?.role === "gerencia") areas.push("Gerencia General");
+          setCompanyAreas((prev) => Array.from(new Set([...prev, ...areas])).sort());
         });
-        setCompanyAreas(prev => {
-          const combined = Array.from(new Set([...prev, ...Array.from(uniqueAreas)]));
-          return combined.sort();
-        });
-      });
 
       return () => {
          unsubscribeCompany();
