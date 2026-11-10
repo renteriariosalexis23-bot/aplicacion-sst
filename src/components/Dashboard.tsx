@@ -91,6 +91,7 @@ import {
 } from "../utils/firestoreErrorHandler";
 import { AIAuditorModal } from "./AIAuditorModal";
 import { isMainAdmin } from "../constants/admin";
+import { PageLoader } from "./ui/States";
 
 export const Dashboard: React.FC = () => {
   const { profile } = useAuth();
@@ -331,9 +332,7 @@ export const Dashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="text-center py-10 text-slate-500">
-        Cargando inteligencia de riesgos...
-      </div>
+      <PageLoader />
     );
   }
 
@@ -692,7 +691,6 @@ export const Dashboard: React.FC = () => {
 
   const handleExportPDF = () => {
     toast("Abriendo diálogo de impresión. Si no funciona, abre la aplicación en una nueva pestaña (icono en la parte superior).", {
-      icon: "🖨️",
       duration: 5000,
     });
     setTimeout(() => {
@@ -802,7 +800,7 @@ export const Dashboard: React.FC = () => {
               className="flex items-center bg-sky-500 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-sky-400 transition-colors shadow-sm print:hidden border border-sky-400"
             >
               <Bot className="w-5 h-5 mr-2" />
-              Auditoría (IA)
+              Auditoría asistida
             </button>
             <button 
               onClick={handleExportPDF}

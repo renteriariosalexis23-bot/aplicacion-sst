@@ -59,6 +59,7 @@ import { CommitteeMembersTab } from "./CommitteeMembersTab";
 import { CommitteeCalendarTab } from "./CommitteeCalendarTab";
 import { isMainAdmin } from "../constants/admin";
 import { sstBodyFor } from "../utils/brand";
+import { PageLoader, EmptyState } from "./ui/States";
 
 export const Committee: React.FC = () => {
   const { profile } = useAuth();
@@ -536,9 +537,7 @@ export const Committee: React.FC = () => {
   </div>
 
       {loading ? (
-        <div className="text-center py-12 text-slate-500">
-          Cargando datos...
-        </div>
+        <PageLoader />
       ) : activeTab === "members" ? (
         <CommitteeMembersTab mode="committee" />
       ) : activeTab === "calendar" ? (
@@ -547,9 +546,7 @@ export const Committee: React.FC = () => {
       ) : activeTab === "meetings" ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {meetings.length === 0 ? (
-            <div className="col-span-full text-center py-12 bg-white rounded-xl border border-slate-200 text-slate-500">
-              No hay reuniones registradas.
-            </div>
+            <EmptyState text="No hay reuniones registradas." />
           ) : (
             meetings.map((meeting) => (
               <div

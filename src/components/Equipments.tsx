@@ -34,6 +34,7 @@ import { Loader2, Plus,
 import { QRCodeSVG } from "qrcode.react";
 import { PageHeader } from "./ui/PageHeader";
 import { ConfirmationModal } from "./ui/ConfirmationModal";
+import { PageLoader } from "./ui/States";
 
 interface EquipmentsProps {
   onViewHistory?: (equipmentName: string) => void;
@@ -804,9 +805,7 @@ export const Equipments: React.FC<EquipmentsProps> = ({ onViewHistory }) => {
         </div>
 
         {loading ? (
-          <div className="p-8 text-center text-slate-500">
-            Cargando equipos...
-          </div>
+          <PageLoader />
         ) : filteredEquipments.length === 0 ? (
           <div className="p-12 text-center">
             <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -875,7 +874,7 @@ export const Equipments: React.FC<EquipmentsProps> = ({ onViewHistory }) => {
                             {eq.type}
                           </span>
                           <span className="text-sm text-slate-500">
-                            📍 {eq.location}
+                            {eq.location}
                           </span>
                         </div>
                       </td>

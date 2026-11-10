@@ -26,6 +26,7 @@ import {
   OperationType,
 } from "../utils/firestoreErrorHandler";
 import { ConfirmationModal } from "./ui/ConfirmationModal";
+import { PageLoader } from "./ui/States";
 
 export interface IpercRisk {
   id?: string;
@@ -186,7 +187,7 @@ export const IpercManager: React.FC = () => {
 
   if (loading)
     return (
-      <div className="p-8 text-center text-slate-500">Cargando matriz...</div>
+      <PageLoader />
     );
 
   const filteredRisks = risks.filter(

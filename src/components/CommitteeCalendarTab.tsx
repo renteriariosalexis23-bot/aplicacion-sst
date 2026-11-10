@@ -11,6 +11,7 @@ import { motion } from "motion/react";
 import { format, getMonth, getYear, parseISO, isSameMonth } from "date-fns";
 import { es } from "date-fns/locale";
 import { isMainAdmin } from "../constants/admin";
+import { PageLoader } from "./ui/States";
 
 interface Props {
   onCreateMeeting?: (date: string, type: "ordinaria" | "extraordinaria") => void;
@@ -109,7 +110,7 @@ export const CommitteeCalendarTab: React.FC<Props> = ({ onCreateMeeting }) => {
 
   const months = Array.from({ length: 12 }, (_, i) => new Date(getYear(viewDate), i, 1));
 
-  if (loading) return <div className="py-12 text-center text-slate-500">Cargando cronograma...</div>;
+  if (loading) return <PageLoader />;
 
   return (
     <div className="space-y-6">

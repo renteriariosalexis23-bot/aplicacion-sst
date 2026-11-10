@@ -46,6 +46,7 @@ import { uploadToCloudinary } from "../utils/cloudinary";
 import { ConfirmationModal } from "./ui/ConfirmationModal";
 import { notifyAllEmployers } from "../utils/notifications";
 import { markEquipmentInspected } from "../utils/equipmentStatus";
+import { PageLoader, EmptyState } from "./ui/States";
 
 export const PreUse: React.FC = () => {
   const { profile } = useAuth();
@@ -395,9 +396,9 @@ export const PreUse: React.FC = () => {
       // Aviso a los administradores: inoperativo, con observaciones o todo conforme
       await notifyAllEmployers(
         !isOperative
-          ? "⚠ Equipo inoperativo reportado"
+          ? "Alerta: equipo inoperativo"
           : badItems > 0
-            ? `⚠ Pre-uso con ${badItems} ${badItems === 1 ? "observación" : "observaciones"}`
+            ? `Alerta: pre-uso con ${badItems} ${badItems === 1 ? "observación" : "observaciones"}`
             : "Checklist Pre-Uso Registrado",
         !isOperative
           ? `${profile.displayName} marcó el equipo ${inspectingFor.name} como INOPERATIVO (${badItems} ${badItems === 1 ? "punto" : "puntos"} con problemas). No debe usarse hasta repararlo.`
@@ -455,7 +456,7 @@ export const PreUse: React.FC = () => {
   };
 
   if (loading)
-    return <div className="p-8 text-center text-slate-500">Cargando...</div>;
+    return <PageLoader />;
 
   return (
     <div className="w-full space-y-6">
@@ -948,9 +949,7 @@ export const PreUse: React.FC = () => {
                   </div>
                 ))}
                 {inspections.length === 0 && (
-                  <div className="p-8 text-center text-slate-500">
-                    No hay registros de inspección.
-                  </div>
+                  <EmptyState text="No hay registros de inspección." />
                 )}
               </div>
             </div>

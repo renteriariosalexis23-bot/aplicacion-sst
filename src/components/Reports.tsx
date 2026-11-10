@@ -78,6 +78,7 @@ type AnalyticsTab =
 
 import { useQueryClient } from "@tanstack/react-query";
 import { isMainAdmin } from "../constants/admin";
+import { PageLoader, EmptyState } from "./ui/States";
 
 export const Reports: React.FC = () => {
   const queryClient = useQueryClient();
@@ -1099,9 +1100,7 @@ export const Reports: React.FC = () => {
           )}
 
           {loading ? (
-            <div className="text-center py-10 text-slate-500">
-              Cargando reportes...
-            </div>
+            <PageLoader />
           ) : filteredReports.length === 0 ? (
             <div className="text-center py-10 text-slate-500 bg-white rounded-xl shadow-sm border border-slate-200">
               {searchTerm ||
@@ -1875,9 +1874,7 @@ const AnalyticsTabsView: React.FC<{
 
   if (loading) {
     return (
-      <div className="p-12 text-center text-slate-500">
-        Cargando registros...
-      </div>
+      <PageLoader />
     );
   }
 
@@ -2252,9 +2249,7 @@ const AnalyticsTabsView: React.FC<{
           )}
 
           {filteredRecords.length === 0 && (
-            <div className="p-8 text-center text-slate-500">
-              No se encontraron registros para los filtros seleccionados.
-            </div>
+            <EmptyState text="No se encontraron registros para los filtros seleccionados." />
           )}
         </div>
       </div>

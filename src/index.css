@@ -190,3 +190,92 @@ input[readonly] {
 .page-header-actions input::placeholder { color: var(--color-slate-400) !important; }
 .page-header-actions input:focus { outline: none; border-color: var(--brand-main) !important; box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-main) 15%, transparent) !important; }
 .page-header-actions div:has(> input) > svg { color: var(--color-slate-400) !important; }
+
+/* ---------- Fluidez: transiciones y respuesta al toque en toda la app ---------- */
+:root { --ease-out: cubic-bezier(0.22, 1, 0.36, 1); }
+html { scroll-behavior: smooth; -webkit-tap-highlight-color: transparent; }
+body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+
+/* Cada pantalla entra con un leve desplazamiento */
+@keyframes page-enter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.page-enter { animation: page-enter 0.28s var(--ease-out) both; }
+
+/* Ventanas emergentes: el fondo aparece y la ventana sube */
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pop-in { from { opacity: 0; transform: translateY(10px) scale(0.985); } to { opacity: 1; transform: none; } }
+.fixed.inset-0[class*="bg-slate-900"], .fixed.inset-0[class*="bg-black"] { animation: fade-in 0.18s ease-out both; }
+.fixed.inset-0[class*="bg-slate-900"] > *, .fixed.inset-0[class*="bg-black"] > * { animation: pop-in 0.24s var(--ease-out) both; }
+
+/* Botones y enlaces responden de inmediato */
+button, a, input, select, textarea {
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, transform 0.12s ease, opacity 0.15s ease;
+}
+button:not(:disabled):active, a[class*="rounded"]:active { transform: scale(0.975); }
+button:disabled { cursor: not-allowed; }
+:is(button, a, input, select, textarea):focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--brand-main) 55%, transparent);
+  outline-offset: 2px;
+}
+
+/* Esqueleto de carga */
+@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+.skeleton {
+  background: linear-gradient(90deg, var(--color-slate-100) 25%, var(--color-slate-200) 50%, var(--color-slate-100) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+/* Tarjetas: sombra suave y pareja en vez de bordes duros */
+main :is(.bg-white)[class*="shadow-sm"] { box-shadow: 0 1px 2px rgb(16 12 20 / 0.04), 0 4px 16px -8px rgb(16 12 20 / 0.08); }
+main table thead th { font-size: 12px; letter-spacing: 0.02em; }
+main table tbody tr { transition: background-color 0.12s ease; }
+main table tbody tr:hover { background-color: var(--color-slate-50); }
+
+/* Campos de formulario con el mismo aspecto en todos los módulos */
+main :is(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]), select, textarea),
+.fixed :is(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]), select, textarea) {
+  border-radius: 10px;
+}
+main :is(input, select, textarea):focus, .fixed :is(input, select, textarea):focus {
+  outline: none;
+  border-color: var(--brand-main);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-main) 14%, transparent);
+}
+
+/* ---------- Pestañas: un solo estilo en todos los módulos ---------- */
+.tab-bar {
+  display: flex;
+  width: fit-content;
+  gap: 2px !important;
+  padding: 4px !important;
+  border: 0 !important;
+  border-radius: 12px !important;
+  background: var(--color-slate-100) !important;
+  box-shadow: none !important;
+}
+.tab-bar > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  margin: 0 !important;
+  padding: 0.5rem 0.95rem !important;
+  border: 0 !important;
+  border-radius: 9px !important;
+  background: transparent !important;
+  color: var(--color-slate-600) !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  box-shadow: none !important;
+}
+.tab-bar > button:hover { color: var(--color-slate-900) !important; }
+.tab-bar > button:is([class*="bg-white text-"], [class*="border-blue-600 text-"], [class*="bg-blue-600 text-white"]) {
+  background: #fff !important;
+  color: var(--brand-main) !important;
+  box-shadow: 0 1px 2px rgb(16 12 20 / 0.1) !important;
+}
+.tab-bar > button span[class*="rounded-full"] { background: #c23a4f !important; color: #fff !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}

@@ -146,7 +146,7 @@ Tu respuesta debe ser un JSON estricto con la siguiente estructura:
                       <div key={i} className="bg-red-50 border border-red-100 p-4 rounded-lg flex flex-col gap-2">
                         <p className="font-semibold text-red-900">{risk.finding}</p>
                         <div className="bg-white/60 p-3 rounded text-sm text-red-800">
-                          <span className="font-bold mr-1">🤖 Recomendación IA:</span>
+                          <span className="font-bold mr-1">Recomendación:</span>
                           {risk.recommendation}
                         </div>
                       </div>
@@ -167,7 +167,7 @@ Tu respuesta debe ser un JSON estricto con la siguiente estructura:
                       <div key={i} className="bg-amber-50 border border-amber-100 p-4 rounded-lg flex flex-col gap-2">
                         <p className="font-semibold text-amber-900">{warn.finding}</p>
                         <div className="bg-white/60 p-3 rounded text-sm text-amber-800">
-                          <span className="font-bold mr-1">🤖 Recomendación IA:</span>
+                          <span className="font-bold mr-1">Recomendación:</span>
                           {warn.recommendation}
                         </div>
                       </div>

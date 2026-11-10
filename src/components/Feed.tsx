@@ -91,6 +91,7 @@ const ExpandableText: React.FC<{ text: string; limit?: number }> = ({
 
 import { PageHeader } from "./ui/PageHeader";
 import { Newspaper } from "lucide-react";
+import { PageLoader } from "./ui/States";
 
 // embedded: el Muro dentro del Inicio (sin encabezado propio ni lista de pendientes,
 // que el Inicio ya muestra en «Lo urgente»)
@@ -764,9 +765,7 @@ export const Feed: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => 
         )}
 
       {loading ? (
-        <div className="text-center py-10 text-slate-500">
-          Cargando publicaciones...
-        </div>
+        <PageLoader />
       ) : posts.length === 0 ? (
         <div className="rounded-2xl border border-slate-200 bg-white px-6 py-10 text-center">
           <p className="font-semibold text-slate-700">Todavía no hay publicaciones.</p>

@@ -46,6 +46,7 @@ import { exportToExcel } from "../utils/exportToExcel";
 import { uploadToCloudinary } from "../utils/cloudinary";
 import { notifyAllEmployers } from "../utils/notifications";
 import { sendNotification } from "../utils/notificationUtils";
+import { PageLoader } from "./ui/States";
 
 const locales = {
   es: es,
@@ -530,9 +531,7 @@ export const AnnualProgram: React.FC = () => {
       </div>
 
       {loading ? (
-        <div className="text-center py-12 text-slate-500">
-          Cargando programa...
-        </div>
+        <PageLoader />
       ) : (
         <>
           {/* Progress Dashboard */}
@@ -598,13 +597,14 @@ export const AnnualProgram: React.FC = () => {
              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 h-[600px]">
                <BigCalendar
                  localizer={localizer}
+                 culture="es"
                  events={calendarEvents}
                  startAccessor="start"
                  endAccessor="end"
                  style={{ height: "100%" }}
                  messages={{
-                   next: "Sig",
-                   previous: "Ant",
+                   next: "Siguiente",
+                   previous: "Anterior",
                    today: "Hoy",
                    month: "Mes",
                    week: "Semana",

@@ -12,6 +12,7 @@ import { PageHeader } from "./ui/PageHeader";
 import { uploadToCloudinary } from "../utils/cloudinary";
 import { generateDrillReportPDF } from "../utils/pdfGenerator";
 import { notifyAllWorkers } from "../utils/notifications";
+import { EmptyState } from "./ui/States";
 
 export const Drills: React.FC = () => {
   const { profile } = useAuth();
@@ -281,9 +282,7 @@ export const Drills: React.FC = () => {
       {activeTab === "drills" && (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
             {drills.length === 0 ? (
-                <div className="p-8 text-center text-slate-500">
-                    No hay simulacros registrados aún.
-                </div>
+                <EmptyState text="No hay simulacros registrados aún." />
             ) : (
                 <ul className="divide-y divide-slate-200">
                     {drills.map((drill) => (
@@ -364,9 +363,7 @@ export const Drills: React.FC = () => {
       {activeTab === "brigades" && (
          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
              {brigadeMembers.length === 0 ? (
-                 <div className="p-8 text-center text-slate-500">
-                     No hay brigadistas registrados.
-                 </div>
+                 <EmptyState text="No hay brigadistas registrados." />
              ) : (
                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
                      {brigadeMembers.map((member) => (

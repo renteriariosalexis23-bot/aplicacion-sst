@@ -482,7 +482,14 @@ export const Layout: React.FC = () => {
 
       {/* Contenido */}
       <main className="mx-auto max-w-7xl px-3 pb-32 pt-4 md:px-8 md:pb-12 md:pt-6 print:max-w-none print:p-0">
-        {isBlockedRoute ? <Navigate to="/" replace /> : <Outlet />}
+        {isBlockedRoute ? (
+          <Navigate to="/" replace />
+        ) : (
+          // La clave hace que cada pantalla entre con una transición suave
+          <div key={location.pathname} className="page-enter">
+            <Outlet />
+          </div>
+        )}
       </main>
 
       {/* Navegación inferior en móvil */}
@@ -529,7 +536,7 @@ export const Layout: React.FC = () => {
               </p>
               
               <div className="mb-4 bg-slate-50 p-4 rounded-lg border border-slate-100">
-                <h4 className="font-semibold text-slate-800 text-sm flex items-center"><span className="text-xl mr-2">🍏</span> En iOS (Safari)</h4>
+                <h4 className="font-semibold text-slate-800 text-sm flex items-center">En iOS (Safari)</h4>
                 <ol className="list-decimal pl-5 text-sm text-slate-600 mt-2 space-y-1">
                   <li>Toca el ícono de <b>Compartir</b> en la barra inferior.</li>
                   <li>Selecciona <b>"Agregar a inicio"</b>.</li>
@@ -537,7 +544,7 @@ export const Layout: React.FC = () => {
               </div>
 
               <div className="mb-4 bg-slate-50 p-4 rounded-lg border border-slate-100">
-                <h4 className="font-semibold text-slate-800 text-sm flex items-center"><span className="text-xl mr-2">🤖</span> En Android (Chrome)</h4>
+                <h4 className="font-semibold text-slate-800 text-sm flex items-center">En Android (Chrome)</h4>
                 <ol className="list-decimal pl-5 text-sm text-slate-600 mt-2 space-y-1">
                   <li>Toca el menú de los <b>tres puntos</b> arriba a la derecha.</li>
                   <li>Selecciona <b>"Instalar aplicación" / "Agregar a la pantalla principal"</b>.</li>

@@ -81,6 +81,7 @@ import { ImageModal } from "./ui/ImageModal";
 import { isMainAdmin } from "../constants/admin";
 import { SignerBanner } from "./ui/SignerBanner";
 import { markEquipmentInspected } from "../utils/equipmentStatus";
+import { PageLoader } from "./ui/States";
 
 export const Inspections: React.FC = () => {
   const queryClient = useQueryClient();
@@ -591,7 +592,7 @@ export const Inspections: React.FC = () => {
     if (!isValid) {
       console.log("Validation failed");
       setError(
-        "Por favor responde todas las preguntas requeridas y agrega un comentario si marcaste algún problema (❌).",
+        "Por favor responde todas las preguntas requeridas y agrega un comentario si marcaste algún problema.",
       );
       return;
     }
@@ -736,7 +737,7 @@ export const Inspections: React.FC = () => {
       const what = [takingInspection.title, targetEquipment?.name].filter(Boolean).join(" · ");
       await notifyAllEmployers(
         hasIssues
-          ? `⚠ Inspección con ${issueCount} ${issueCount === 1 ? "observación" : "observaciones"}`
+          ? `Alerta: inspección con ${issueCount} ${issueCount === 1 ? "observación" : "observaciones"}`
           : "Nueva Inspección Completada",
         hasIssues
           ? `${profile?.displayName || profile?.email} marcó ${issueCount} ${issueCount === 1 ? "punto" : "puntos"} con problemas en: ${what}. Revísala y firma.`
@@ -868,8 +869,8 @@ export const Inspections: React.FC = () => {
           key = inspection.equipmentName || "Sin equipo asignado";
         } else if (historyGrouping === "status") {
           key = inspection.hasIssues
-            ? "🔴 Con Anomalías / Problemas"
-            : "🟢 Correctas (Sin observaciones)";
+            ? "Con observaciones"
+            : "Sin observaciones";
         }
 
         if (!acc[key]) acc[key] = [];
@@ -1254,9 +1255,7 @@ export const Inspections: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="p-8 text-center text-slate-500">
-        Cargando inspecciones...
-      </div>
+      <PageLoader />
     );
   }
 
@@ -2020,7 +2019,7 @@ export const Inspections: React.FC = () => {
       {!isCreatingTemplate && (
         ["employer", "supervisor", "super_admin", "gerencia"].includes(profile?.role || "") ? (
         <div className="space-y-6">
-          <div className="flex gap-2 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-1.5 hide-scrollbar">
+          <div className="tab-bar flex gap-2 rounded-2xl p-1.5">
             {([
               { id: "equipments", label: "Tablero de Equipos", short: "Equipos", icon: LayoutGrid, badge: 0 },
               { id: "templates", label: "Plantillas de Inspección", short: "Plantillas", icon: ClipboardList, badge: 0 },

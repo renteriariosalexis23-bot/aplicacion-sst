@@ -42,6 +42,7 @@ import {
 import { exportToExcel } from "../utils/exportToExcel";
 import { generateDigitalSignatureConsentPDF } from "../utils/pdfGenerator";
 import { isMainAdmin } from "../constants/admin";
+import { PageLoader, EmptyState } from "./ui/States";
 
 const VehicleInfoModal = ({ user, onClose }: { user: UserProfile, onClose: () => void }) => {
   return (
@@ -628,13 +629,9 @@ export const Users: React.FC = () => {
       )}
 
       {loading ? (
-        <div className="text-center py-10 text-slate-500">
-          Cargando usuarios...
-        </div>
+        <PageLoader />
       ) : Object.keys(groupedUsers).length === 0 ? (
-        <div className="text-center py-10 bg-white rounded-xl border border-slate-200 text-slate-500">
-          No se encontraron usuarios.
-        </div>
+        <EmptyState text="No se encontraron usuarios." />
       ) : (
         <div className="space-y-4">
           {Object.entries(groupedUsers).map(([ruc, groupUsers]) => {

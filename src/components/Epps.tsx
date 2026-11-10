@@ -40,6 +40,7 @@ import { sendNotification } from "../utils/notificationUtils";
 
 import { SignerBanner } from "./ui/SignerBanner";
 import { PageHeader } from "./ui/PageHeader";
+import { PageLoader, EmptyState } from "./ui/States";
 
 export const Epps: React.FC = () => {
   const { profile } = useAuth();
@@ -535,7 +536,7 @@ export const Epps: React.FC = () => {
     exportToExcel(formattedData, "Historial_Entregas_EPP");
   };
 
-  if (loading) return <div className="p-8 text-center">Cargando...</div>;
+  if (loading) return <PageLoader />;
 
   return (
     <div className="w-full space-y-6">
@@ -1263,10 +1264,7 @@ export const Epps: React.FC = () => {
                   </div>
                 ))}
                 {catalog.length === 0 && !isCreatingEpp && (
-                  <div className="col-span-full p-8 text-center border-2 border-dashed border-slate-300 rounded-xl text-slate-500">
-                    Aún no hay EPPs en el catálogo. Agrega los equipos de
-                    protección que la empresa proporciona.
-                  </div>
+                  <EmptyState text="Aún no hay EPPs en el catálogo. Agrega los equipos de protección que la empresa proporciona." />
                 )}
               </div>
             </div>
@@ -1487,9 +1485,7 @@ export const Epps: React.FC = () => {
                     </div>
                   ))}
                 {deliveries.length === 0 && (
-                  <div className="col-span-full p-8 text-center text-slate-500 bg-white rounded-xl border border-slate-200">
-                    No hay registros de entrega de EPPs.
-                  </div>
+                  <EmptyState text="No hay registros de entrega de EPPs." />
                 )}
               </div>
             </div>

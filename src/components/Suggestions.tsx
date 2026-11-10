@@ -38,6 +38,7 @@ import toast from "react-hot-toast";
 import { notifyAllEmployers, notifyAllWorkers } from "../utils/notifications";
 import { sendNotification } from "../utils/notificationUtils";
 import { isMainAdmin } from "../constants/admin";
+import { PageLoader } from "./ui/States";
 
 export const Suggestions: React.FC = () => {
   const { profile } = useAuth();
@@ -273,7 +274,7 @@ export const Suggestions: React.FC = () => {
 
   if (loading)
     return (
-      <div className="p-8 text-center text-slate-500">Cargando buzón...</div>
+      <PageLoader />
     );
 
   return (

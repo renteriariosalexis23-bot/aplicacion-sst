@@ -19,6 +19,7 @@ import { notifyUser, deleteNotificationsByTarget } from "../utils/notifications"
 import { ManagementMeeting, ManagementAgreement } from "../types";
 import toast from "react-hot-toast";
 import { SignerBanner } from "./ui/SignerBanner";
+import { EmptyState } from "./ui/States";
 
 export const ManagementMeetings = () => {
   const { profile } = useAuth();
@@ -822,9 +823,7 @@ export const ManagementMeetings = () => {
             </motion.div>
           ))}
           {meetingAgreements.length === 0 && (
-            <div className="col-span-full py-12 text-center text-slate-500 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
-              No hay tareas registradas aún para esta reunión.
-            </div>
+            <EmptyState text="No hay tareas registradas aún para esta reunión." />
           )}
         </motion.div>
 

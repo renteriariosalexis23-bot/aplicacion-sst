@@ -63,6 +63,7 @@ const MONTHS = [
 ];
 
 import { PageHeader } from "./ui/PageHeader";
+import { EmptyState } from "./ui/States";
 
 export const SstStatistics: React.FC = () => {
   const { profile } = useAuth();
@@ -843,9 +844,7 @@ export const SstStatistics: React.FC = () => {
         {/* Mobile View - Cards */}
         <div className="md:hidden flex flex-col gap-4 p-4 bg-slate-50">
           {statistics.length === 0 ? (
-            <div className="text-center py-8 text-slate-500">
-              No hay registros estadísticos.
-            </div>
+            <EmptyState text="No hay registros estadísticos." />
           ) : (
             statistics.map((stat, idx) => (
               <div

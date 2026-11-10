@@ -37,7 +37,7 @@ export const useEquipmentAlerts = () => {
                 await addDoc(collection(db, "notifications"), {
                    userId: profile.uid,
                    companyRuc: selectedCompany.ruc,
-                   title: "⚠️ Vencimiento de Equipo",
+                   title: "Equipo por vencer",
                    message: `El equipo ${data.codigoInterno || data.name} vencerá el ${data.expirationDate}.`,
                    read: false,
                    link: "/equipments",
@@ -54,7 +54,7 @@ export const useEquipmentAlerts = () => {
                 await addDoc(collection(db, "notifications"), {
                    userId: profile.uid,
                    companyRuc: selectedCompany.ruc,
-                   title: "🔧 Prueba Hidrostática",
+                   title: "Prueba hidrostática pendiente",
                    message: `El equipo ${data.codigoInterno || data.name} requiere prueba hidrostática para el ${data.hydrostaticTestDate}.`,
                    read: false,
                    link: "/equipments",

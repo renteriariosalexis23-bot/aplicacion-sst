@@ -101,7 +101,7 @@ export const Home: React.FC = () => {
           {canSwitchCompany && (
             <section>
               <p className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Tus empresas</p>
-              <div className="tab-bar -mx-3 flex gap-2 px-3 pb-1 lg:mx-0 lg:flex-col lg:px-0">
+              <div className="flex flex-col gap-2">
                 {companies.map((company) => {
                   const brand = resolveBrand(company);
                   const active = company.ruc === selectedCompany?.ruc;
@@ -109,7 +109,7 @@ export const Home: React.FC = () => {
                     <button
                       key={company.id || company.ruc}
                       onClick={() => setSelectedCompanyRuc(company.ruc)}
-                      className={`flex w-[78%] min-w-0 items-center gap-3 rounded-xl border bg-white px-3 py-2.5 text-left transition-colors hover:border-slate-300 lg:w-full ${
+                      className={`flex w-full min-w-0 items-center gap-3 rounded-xl border bg-white px-3 py-2.5 text-left transition-colors hover:border-slate-300 ${
                         active ? "border-blue-600" : "border-slate-200"
                       }`}
                       style={{ borderLeft: `4px solid ${brand.main}` }}

@@ -9,6 +9,7 @@ import toast from "react-hot-toast";
 import { format } from "date-fns";
 import Select from "react-select";
 import { isMainAdmin } from "../constants/admin";
+import { PageLoader } from "./ui/States";
 
 type Mode = "committee" | "supervisor";
 
@@ -159,7 +160,7 @@ export const CommitteeMembersTab: React.FC<{ mode?: Mode }> = ({ mode = "committ
     }
   };
 
-  if (loading) return <div className="py-12 text-center text-slate-500">Cargando...</div>;
+  if (loading) return <PageLoader />;
 
   const title = isSupervisorMode ? "Supervisor de SST" : "Miembros del Comité de SST";
   const subtitle = isSupervisorMode

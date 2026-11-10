@@ -49,6 +49,7 @@ import { generateDocumentCargoPDF } from "../utils/pdfGenerator";
 import { ConfirmationModal } from "./ui/ConfirmationModal";
 import { SignerBanner } from "./ui/SignerBanner";
 import { subscribeUserAreas } from "../utils/companyAreas";
+import { PageLoader, EmptyState } from "./ui/States";
 
 const DOCUMENT_CATEGORIES = [
   "Política y Objetivos SST",
@@ -833,9 +834,7 @@ export const Documents: React.FC = () => {
             )}
 
           {loading ? (
-            <div className="text-center py-10 text-slate-500">
-              Cargando documentos...
-            </div>
+            <PageLoader />
           ) : !selectedCategory && !searchTerm ? (
             <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
               {DOCUMENT_CATEGORIES.map((cat) => {
@@ -890,9 +889,7 @@ export const Documents: React.FC = () => {
               )}
 
               {filteredDocuments.length === 0 ? (
-                <div className="text-center py-10 text-slate-500 bg-white rounded-xl shadow-sm border border-slate-200">
-                  No se encontraron documentos en esta categoría.
-                </div>
+                <EmptyState text="No se encontraron documentos en esta categoría." />
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {filteredDocuments.map((docItem) => (
@@ -1085,7 +1082,7 @@ export const Documents: React.FC = () => {
                         >
                           <CheckCircle className="w-4 h-4 mr-2" />
                           {hasConfirmedReading
-                            ? "1. Lectura Confirmada ✓"
+                            ? "1. Lectura confirmada"
                             : "1. Confirmo que he leído el documento"}
                         </button>
                       </div>

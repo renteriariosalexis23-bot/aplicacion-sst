@@ -133,7 +133,7 @@ export const syncPendingInspections = async () => {
         await markEquipmentInspected(data.equipmentId, !!data.hasIssues, data.workerName, new Date(item.timestamp));
         const issueCount = (data.results || []).filter((r: any) => r.isIssue).length;
         await notifyAllEmployers(
-          data.hasIssues ? `⚠ Inspección con ${issueCount} ${issueCount === 1 ? "observación" : "observaciones"}` : "Nueva Inspección Completada",
+          data.hasIssues ? `Alerta: inspección con ${issueCount} ${issueCount === 1 ? "observación" : "observaciones"}` : "Nueva Inspección Completada",
           `${data.workerName} ${data.hasIssues ? `marcó ${issueCount} ${issueCount === 1 ? "punto" : "puntos"} con problemas en` : "completó"} la inspección: ${[data.templateTitle, data.equipmentName].filter(Boolean).join(" · ")} (hecha sin internet, subida ahora).`,
           "/inspections",
           data.companyRuc,
@@ -193,7 +193,7 @@ export const syncPendingInspections = async () => {
         const badItems = (data.items || []).filter((i: any) => !i.isOk).length;
         await markEquipmentInspected(data.equipmentId, badItems > 0, data.workerName, new Date(item.timestamp));
         await notifyAllEmployers(
-          !data.isOperative ? "⚠ Equipo inoperativo reportado" : badItems > 0 ? `⚠ Pre-uso con ${badItems} ${badItems === 1 ? "observación" : "observaciones"}` : "Checklist Pre-Uso Registrado",
+          !data.isOperative ? "Alerta: equipo inoperativo" : badItems > 0 ? `Alerta: pre-uso con ${badItems} ${badItems === 1 ? "observación" : "observaciones"}` : "Checklist Pre-Uso Registrado",
           `${data.workerName} registró el pre-uso de ${data.equipmentName}${!data.isOperative ? " y lo marcó como INOPERATIVO" : badItems > 0 ? ` con ${badItems} ${badItems === 1 ? "punto" : "puntos"} con problemas` : ". Todo conforme"} (hecho sin internet, subido ahora).`,
           "/preuse",
           data.companyRuc,

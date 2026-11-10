@@ -600,7 +600,7 @@ export const MandatoryRegisters: React.FC = () => {
             >
               <div className="flex justify-between items-start w-full mb-4">
                 <div
-                  className={`${cat.color} p-3 rounded-xl text-white group-hover:scale-110 transition-transform`}
+                  className="rounded-xl bg-blue-50 p-3 text-blue-700"
                 >
                   <Icon className="w-6 h-6" />
                 </div>

@@ -48,6 +48,7 @@ import { uploadToCloudinary } from "../utils/cloudinary";
 import { exportToExcel } from "../utils/exportToExcel";
 import { SignerBanner } from "./ui/SignerBanner";
 import { subscribeUserAreas } from "../utils/companyAreas";
+import { PageLoader, EmptyState } from "./ui/States";
 
 export const Trainings: React.FC = () => {
   const { profile } = useAuth();
@@ -760,9 +761,7 @@ export const Trainings: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="text-center py-10 text-slate-500">
-        Cargando capacitaciones...
-      </div>
+      <PageLoader />
     );
   }
 
@@ -1183,7 +1182,7 @@ export const Trainings: React.FC = () => {
               : "text-slate-600 hover:text-slate-900"
           }`}
         >
-          Portal de Capacitaciones
+          Capacitaciones
         </button>
         {(profile?.role === "employer" || profile?.role === "super_admin" || profile?.role === "gerencia") && (
           <button
@@ -1194,7 +1193,7 @@ export const Trainings: React.FC = () => {
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
-            Dashboard de Cumplimiento
+            Cumplimiento
           </button>
         )}
       </div>
@@ -1202,9 +1201,7 @@ export const Trainings: React.FC = () => {
       {activeTab === "lista" && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {filteredTrainings.length === 0 ? (
-            <div className="col-span-full text-center py-10 bg-white rounded-xl border border-slate-200 text-slate-500">
-              No se encontraron capacitaciones.
-            </div>
+            <EmptyState text="No se encontraron capacitaciones." />
           ) : (
             filteredTrainings.map((training) => {
               const isCompleted = training.completedBy?.includes(
