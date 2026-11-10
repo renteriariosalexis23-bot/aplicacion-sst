@@ -947,7 +947,7 @@ export const Epps: React.FC = () => {
                       <p className="text-sm text-slate-500 font-medium mb-1">
                         Entregado el:{" "}
                         {delivery.deliveryDate?.toDate
-                          ? delivery.deliveryDate.toDate().toLocaleString()
+                          ? delivery.deliveryDate.toDate().toLocaleString("es-PE", { dateStyle: "medium", timeStyle: "short" })
                           : "Fecha desconocida"}
                       </p>
                       <ul className="list-disc list-inside space-y-1">
@@ -963,12 +963,12 @@ export const Epps: React.FC = () => {
                           </li>
                         ))}
                       </ul>
-                      <div className="mt-3 flex items-center gap-2">
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
                         {delivery.signature ? (
                           <img
                             src={delivery.signature}
                             alt="Mi Firma"
-                            className="h-6 object-contain bg-white border border-slate-200 rounded px-1"
+                            className="h-6 max-w-[140px] object-contain bg-white border border-slate-200 rounded px-1"
                           />
                         ) : (
                           <span className="rounded-md border border-amber-100 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">

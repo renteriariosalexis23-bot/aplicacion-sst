@@ -283,7 +283,7 @@ const EditUserModal = ({ user, companies, onClose, onSave }: { user: UserProfile
                     Personal de Dirección o Confianza
                   </span>
                   <span className="text-xs text-slate-400">
-                    Excluye al trabajador de participar como votante de base en elecciones del CSST
+                    Se muestra como dato en el Directorio.
                   </span>
                 </div>
               </label>
