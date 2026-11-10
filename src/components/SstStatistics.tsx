@@ -526,8 +526,8 @@ export const SstStatistics: React.FC = () => {
       {/* KPI Summary Widgets */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
-            <ShieldCheck className="w-6 h-6 text-emerald-600" />
+          <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
+            <ShieldCheck className="w-6 h-6 text-slate-500" />
           </div>
           <div>
             <p className="text-sm text-slate-500 font-medium">Meses Invictos</p>
@@ -537,8 +537,8 @@ export const SstStatistics: React.FC = () => {
           </div>
         </div>
         <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center shrink-0">
-            <AlertCircle className="w-6 h-6 text-red-600" />
+          <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
+            <AlertCircle className="w-6 h-6 text-slate-500" />
           </div>
           <div>
             <p className="text-sm text-slate-500 font-medium">
@@ -550,8 +550,8 @@ export const SstStatistics: React.FC = () => {
           </div>
         </div>
         <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
-            <Activity className="w-6 h-6 text-blue-600" />
+          <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
+            <Activity className="w-6 h-6 text-slate-500" />
           </div>
           <div>
             <p className="text-sm text-slate-500 font-medium">
@@ -563,8 +563,8 @@ export const SstStatistics: React.FC = () => {
           </div>
         </div>
         <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center shrink-0">
-            <CalendarDays className="w-6 h-6 text-orange-600" />
+          <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
+            <CalendarDays className="w-6 h-6 text-slate-500" />
           </div>
           <div>
             <p className="text-sm text-slate-500 font-medium">
