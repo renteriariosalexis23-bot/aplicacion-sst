@@ -1174,6 +1174,8 @@ export const Inspections: React.FC = () => {
                            ).catch(() => {});
                         }
                         toast.success("Firma electrónica aplicada correctamente.");
+                        // La lista y los contadores se actualizan con la firma recién aplicada
+                        queryClient.invalidateQueries({ queryKey: ["inspections"] });
                       } catch (err) {
                         console.error("Error signing:", err);
                         toast.error("Error al aplicar la firma.");
