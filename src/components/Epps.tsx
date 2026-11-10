@@ -49,6 +49,28 @@ export const Epps: React.FC = () => {
   const [activeTab, setActiveTab] = useState<
     "dashboard" | "catalog" | "deliveries"
   >("dashboard");
+
+  // El trabajador firma una entrega que le solicitaron, con la firma guardada en su perfil
+  const signMyDelivery = async (delivery: EppDelivery) => {
+    const sigUrl = profile?.digitalSignatureConsent?.signatureUrl || profile?.savedSignatureUrl;
+    if (!sigUrl) {
+      toast.error("Primero guarda tu firma en Mi Perfil y vuelve a intentarlo.");
+      return;
+    }
+    try {
+      await updateDoc(doc(db, "epp_deliveries", delivery.id!), { signature: sigUrl, status: "completed" });
+      toast.success("Entrega firmada.");
+      await notifyAllEmployers(
+        "Entrega de EPP firmada",
+        `${profile?.displayName} firmó la recepción de: ${delivery.items.map((i) => i.name).join(", ")}.`,
+        "/epps",
+        delivery.companyRuc,
+      );
+    } catch (err) {
+      console.error("Error signing:", err);
+      toast.error("No se pudo firmar. Inténtalo de nuevo.");
+    }
+  };
   const [catalog, setCatalog] = useState<EppItem[]>([]);
   const [deliveries, setDeliveries] = useState<EppDelivery[]>([]);
   const [workers, setWorkers] = useState<UserProfile[]>([]);
@@ -942,24 +964,40 @@ export const Epps: React.FC = () => {
                         ))}
                       </ul>
                       <div className="mt-3 flex items-center gap-2">
-                        <img
-                          src={delivery.signature}
-                          alt="Mi Firma"
-                          className="h-6 object-contain bg-white border border-slate-200 rounded px-1"
-                        />
+                        {delivery.signature ? (
+                          <img
+                            src={delivery.signature}
+                            alt="Mi Firma"
+                            className="h-6 object-contain bg-white border border-slate-200 rounded px-1"
+                          />
+                        ) : (
+                          <span className="rounded-md border border-amber-100 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">
+                            {delivery.status === "pending_signature" ? "Falta tu firma" : "Firma en papel"}
+                          </span>
+                        )}
                         <span className="text-xs text-slate-400">
                           Supervisado por: {delivery.supervisorName}
                         </span>
                       </div>
                     </div>
-                    <button
-                      onClick={() =>
-                        generateEppDeliveryPdf(delivery, selectedCompany)
-                      }
-                      className="flex items-center text-blue-600 hover:text-blue-800 font-medium text-xs bg-blue-50 px-3 py-1.5 rounded-lg transition-colors border border-blue-100 shrink-0"
-                    >
-                      <Download className="w-4 h-4 mr-1" /> Descargar Mi Acta
-                    </button>
+                    {/* Entrega con firma solicitada: el trabajador la firma con la firma de su perfil */}
+                    {!delivery.signature && delivery.status === "pending_signature" ? (
+                      <button
+                        onClick={() => signMyDelivery(delivery)}
+                        className="flex shrink-0 items-center rounded-lg bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700"
+                      >
+                        <FileSignature className="mr-1.5 h-4 w-4" /> Firmar recepción
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() =>
+                          generateEppDeliveryPdf(delivery, selectedCompany)
+                        }
+                        className="flex items-center text-blue-600 hover:text-blue-800 font-medium text-xs bg-blue-50 px-3 py-1.5 rounded-lg transition-colors border border-blue-100 shrink-0"
+                      >
+                        <Download className="w-4 h-4 mr-1" /> Descargar Mi Acta
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -1388,22 +1426,7 @@ export const Epps: React.FC = () => {
                                 />
                               ) : delivery.status === "pending_signature" && profile?.uid === delivery.workerId ? (
                                 <button
-                                  onClick={async () => {
-                                    const sigUrl = profile.digitalSignatureConsent?.signatureUrl || profile.savedSignatureUrl;
-                                    if (!sigUrl) {
-                                      toast.error("Debes configurar tu firma electrónica en tu perfil primero.");
-                                      return;
-                                    }
-                                    try {
-                                      await updateDoc(doc(db, "epp_deliveries", delivery.id!), {
-                                        signature: sigUrl,
-                                        status: "completed"
-                                      });
-                                      toast.success("Firmado correctamente");
-                                    } catch (err) {
-                                      console.error("Error signing:", err);
-                                    }
-                                  }}
+                                  onClick={() => signMyDelivery(delivery)}
                                   className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 transition-colors shadow-sm"
                                 >
                                   Firmar Documento
