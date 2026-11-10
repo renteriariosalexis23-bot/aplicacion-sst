@@ -245,9 +245,11 @@ export const loadCompanyLogo = async (): Promise<{ data: string; ratio: number }
     img.src = currentLogoSrc;
     await img.decode();
     const canvas = document.createElement("canvas");
-    canvas.width = img.naturalWidth;
-    canvas.height = img.naturalHeight;
-    canvas.getContext("2d")!.drawImage(img, 0, 0);
+    // Se reduce para que el PDF no pese de más (el logo original mide miles de píxeles)
+    const scale = Math.min(1, 900 / img.naturalWidth);
+    canvas.width = Math.round(img.naturalWidth * scale);
+    canvas.height = Math.round(img.naturalHeight * scale);
+    canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
     logoCache[currentLogoSrc] = { data: canvas.toDataURL("image/png"), ratio: img.naturalWidth / img.naturalHeight };
     return logoCache[currentLogoSrc];
   } catch (error) {
