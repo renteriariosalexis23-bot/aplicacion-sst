@@ -198,13 +198,14 @@ body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; 
 
 /* Cada pantalla entra con un leve desplazamiento */
 @keyframes page-enter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-.page-enter { animation: page-enter 0.28s var(--ease-out) both; }
+/* Sin "both": al terminar no queda ninguna transformación, que encerraría las ventanas emergentes */
+.page-enter { animation: page-enter 0.28s var(--ease-out); }
 
 /* Ventanas emergentes: el fondo aparece y la ventana sube */
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes pop-in { from { opacity: 0; transform: translateY(10px) scale(0.985); } to { opacity: 1; transform: none; } }
-.fixed.inset-0[class*="bg-slate-900"], .fixed.inset-0[class*="bg-black"] { animation: fade-in 0.18s ease-out both; }
-.fixed.inset-0[class*="bg-slate-900"] > *, .fixed.inset-0[class*="bg-black"] > * { animation: pop-in 0.24s var(--ease-out) both; }
+.fixed.inset-0[class*="bg-slate-900"], .fixed.inset-0[class*="bg-black"] { animation: fade-in 0.18s ease-out; }
+.fixed.inset-0[class*="bg-slate-900"] > *, .fixed.inset-0[class*="bg-black"] > * { animation: pop-in 0.24s var(--ease-out); }
 
 /* Botones y enlaces responden de inmediato */
 button, a, input, select, textarea {

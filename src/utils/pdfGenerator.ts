@@ -58,7 +58,7 @@ export const addTraceabilitySignature = (
     fit(`Firmante: ${signerName}`),
     fit(`DNI: ${signerDni || "No registrado"}`),
     ...(email ? [fit(`Email: ${email}`)] : []),
-    fit(`Fecha: ${timestamp || new Date().toLocaleString()}`),
+    fit(`Fecha: ${timestamp || new Date().toLocaleString("es-PE")}`),
   ];
   const boxHeight = 30 + details.length * 3;
   const { brandRgb } = getLayout(doc);
@@ -282,9 +282,9 @@ export const generateDocumentCargoPDF = async (
   let formatString = "";
   if (signature.timestamp && signature.timestamp.seconds) {
     const d = new Date(signature.timestamp.seconds * 1000);
-    formatString = `${d.toLocaleDateString()} a las ${d.toLocaleTimeString()}`;
+    formatString = `${d.toLocaleDateString("es-PE")} a las ${d.toLocaleTimeString("es-PE")}`;
   } else {
-    formatString = new Date().toLocaleString();
+    formatString = new Date().toLocaleString("es-PE");
   }
 
   autoTable(doc, {
@@ -483,7 +483,7 @@ export const generateEppDeliveryPdf = async (
   y = addInfoTable(doc, y, "Datos de la entrega", [
     ["Empresa", company?.businessName || "-"],
     ["RUC", company?.ruc || "-"],
-    ["Fecha de entrega", when ? when.toLocaleDateString() : "-"],
+    ["Fecha de entrega", when ? when.toLocaleDateString("es-PE") : "-"],
     ["Trabajador", delivery.workerName],
     ["DNI", delivery.workerDni],
   ]);
@@ -526,7 +526,7 @@ export const generateEppDeliveryPdf = async (
       console.error(e);
     }
   }
-  const dateText = when ? when.toLocaleString() : new Date().toLocaleString();
+  const dateText = when ? when.toLocaleString("es-PE") : new Date().toLocaleString("es-PE");
   addSignatureRow(doc, y + 8, [
     { title: "Trabajador", image: delivery.signature, name: delivery.workerName, dni: delivery.workerDni, date: dateText },
     { title: "Supervisor SST", image: supervisorSig, name: delivery.supervisorName || "Supervisor", dni: delivery.supervisorDni, date: dateText },
@@ -584,8 +584,8 @@ export const generateDigitalSignatureConsentPDF = async (
     try {
       const base64data = await getNormalizedPdfImage(sigUrl, 420, 216);
       const consentedAt = profile.digitalSignatureConsent?.consentedAt?.toDate
-        ? profile.digitalSignatureConsent.consentedAt.toDate().toLocaleString()
-        : new Date().toLocaleString();
+        ? profile.digitalSignatureConsent.consentedAt.toDate().toLocaleString("es-PE")
+        : new Date().toLocaleString("es-PE");
       addSignatureRow(doc, y + 10, [
         { title: "Firma del trabajador", image: base64data, name: profile.displayName, dni: profile.dni, date: consentedAt },
       ]);
@@ -652,7 +652,7 @@ export const generateReportPDF = async (report: Report) => {
     y = addInfoTable(doc, y, "Detalles de la investigación", [
       ["Metodología", inv.methodology],
       ["Realizado por", inv.conductedByName],
-      ["Fecha de investigación", inv.conductedAt ? new Date(inv.conductedAt.seconds * 1000).toLocaleDateString() : ""],
+      ["Fecha de investigación", inv.conductedAt ? new Date(inv.conductedAt.seconds * 1000).toLocaleDateString("es-PE") : ""],
     ]);
     y = addSection(doc, y, "Resumen", inv.summary);
     if (inv.development) y = addSection(doc, y, "Desarrollo de la metodología", inv.development);
@@ -1560,9 +1560,9 @@ export const generateInspectionPDF = async (inspection: Inspection) => {
     headStyles: { fillColor: layout.brandRgb },
     styles: { fontSize: 9, cellPadding: 2, overflow: "linebreak", valign: "middle" },
     columnStyles: {
-      0: { cellWidth: 70 },
+      0: { cellWidth: 66 },
       1: { cellWidth: 22, halign: "center" },
-      2: { cellWidth: 26, halign: "center", fontStyle: "bold" },
+      2: { cellWidth: 30, halign: "center", fontStyle: "bold", overflow: "visible" },
       3: { cellWidth: "auto" },
     },
     didParseCell: (data) => {
@@ -1598,7 +1598,7 @@ export const generateInspectionPDF = async (inspection: Inspection) => {
     }
   }
 
-  const dateText = when ? when.toLocaleString() : new Date().toLocaleString();
+  const dateText = when ? when.toLocaleString("es-PE") : new Date().toLocaleString("es-PE");
   let workerSig: string | null = inspection.signatureBase64 || null;
   if (!workerSig && inspection.signatureUrl) {
     try {
@@ -1756,7 +1756,7 @@ export const generateInductionPDF = async (induction: Induction, INDUCTION_SECTI
     ["DNI", induction.workerDni],
     ["Cargo", induction.workerPosition || "-"],
     ["Impartida por", induction.trainerName || "-"],
-    ["Fecha", induction.date ? new Date(induction.date + "T00:00:00").toLocaleDateString() : "-"],
+    ["Fecha", induction.date ? new Date(induction.date + "T00:00:00").toLocaleDateString("es-PE") : "-"],
   ]);
 
   if (induction.checklist && induction.checklist.length > 0) {
@@ -1810,7 +1810,7 @@ export const generateInductionPDF = async (induction: Induction, INDUCTION_SECTI
   }
   y = (doc as any).lastAutoTable.finalY + 10;
 
-  const dateText = induction.createdAt?.toDate ? induction.createdAt.toDate().toLocaleString() : undefined;
+  const dateText = induction.createdAt?.toDate ? induction.createdAt.toDate().toLocaleString("es-PE") : undefined;
   const load = async (url?: string | null) => {
     if (!url) return null;
     try {

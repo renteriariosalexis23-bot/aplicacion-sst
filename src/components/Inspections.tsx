@@ -907,7 +907,11 @@ export const Inspections: React.FC = () => {
     return (
       <div
         key={inspection.id}
-        onClick={() => setSelectedInspectionToView(inspection)}
+        onClick={(e) => {
+          // Los botones de la tarjeta hacen su propia acción; solo el resto abre el detalle
+          if ((e.target as HTMLElement).closest("button, a, input, select, textarea")) return;
+          setSelectedInspectionToView(inspection);
+        }}
         className={`bg-white rounded-2xl border ${isPending && inspection.hasIssues ? "border-red-300 shadow-md shadow-red-100/50" : "border-slate-200 shadow-sm"} overflow-hidden flex flex-col transition-all hover:shadow-lg cursor-pointer`}
       >
         {/* HEADER */}

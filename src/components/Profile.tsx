@@ -94,8 +94,9 @@ export const Profile: React.FC = () => {
         position,
       };
 
+      // Se guarda tanto la primera firma como una actualización
       if (
-        isEditingSignature &&
+        (isEditingSignature || !savedSignatureUrl) &&
         sigCanvas.current &&
         !sigCanvas.current.isEmpty()
       ) {
