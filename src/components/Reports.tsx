@@ -353,6 +353,7 @@ export const Reports: React.FC = () => {
       );
 
       toast.success("Reporte enviado exitosamente.");
+      queryClient.invalidateQueries({ queryKey: ["reports"] });
       setType("incident");
       setDescription("");
       setLocation("");
@@ -377,6 +378,7 @@ export const Reports: React.FC = () => {
       await updateDoc(doc(db, "reports", reportId), {
         status: newStatus,
       });
+      queryClient.invalidateQueries({ queryKey: ["reports"] });
 
       if (newStatus === "reviewed") {
         toast.success("Reporte marcado como revisado.");
@@ -411,6 +413,7 @@ export const Reports: React.FC = () => {
       await updateDoc(doc(db, "reports", reportId), {
         comments: [...currentComments, newComment],
       });
+      queryClient.invalidateQueries({ queryKey: ["reports"] });
       setCommentText("");
     } catch (error) {
       console.error("Error adding comment:", error);
@@ -1687,7 +1690,10 @@ export const Reports: React.FC = () => {
           {activeInvestigationReport && (
             <InvestigationWizard
               report={activeInvestigationReport}
-              onClose={() => setActiveInvestigationReport(null)}
+              onClose={() => {
+                setActiveInvestigationReport(null);
+                queryClient.invalidateQueries({ queryKey: ["reports"] });
+              }}
             />
           )}
           {activeLegalRegisterReport && (
@@ -1699,7 +1705,10 @@ export const Reports: React.FC = () => {
                   : "incident"
               }
               initialData={activeLegalRegisterReport.legalRegister}
-              onClose={() => setActiveLegalRegisterReport(null)}
+              onClose={() => {
+                setActiveLegalRegisterReport(null);
+                queryClient.invalidateQueries({ queryKey: ["reports"] });
+              }}
             />
           )}
         </>

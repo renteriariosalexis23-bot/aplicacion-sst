@@ -14,9 +14,15 @@ export function useReports(companyRuc: string | undefined, workerId: string | un
            baseConstraints.push(where("companyRuc", "==", companyRuc));
         }
       } else if (workerId) {
-        baseConstraints.push(where("createdBy", "==", workerId));
+        // El trabajador ve solo sus reportes. Son pocos: se traen todos y se ordenan aquí,
+        // así la consulta no necesita un índice compuesto en Firestore.
+        const own = await getDocs(query(collection(db, "reports"), where("reportedBy", "==", workerId)));
+        const docs = own.docs
+          .map((d) => ({ id: d.id, ...(d.data() as object) }) as Report)
+          .sort((a: any, b: any) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+        return { docs, lastVisible: null };
       }
-      
+
       baseConstraints.push(orderBy("createdAt", "desc"));
 
       q = query(collection(db, "reports"), ...baseConstraints, limit(15));
