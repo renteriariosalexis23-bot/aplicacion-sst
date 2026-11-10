@@ -14,6 +14,16 @@ interface CompanyContextType {
   loading: boolean;
 }
 
+// Recuerda en este dispositivo la empresa que cada administrador estaba viendo
+const LAST_COMPANY_KEY = "sst-empresa-";
+const readLastCompany = (uid: string) => {
+  try {
+    return localStorage.getItem(LAST_COMPANY_KEY + uid) || "";
+  } catch (e) {
+    return "";
+  }
+};
+
 const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
 
 export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({
@@ -77,8 +87,8 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({
             return companiesData.find((c) => c.ruc === prev.ruc) || prev;
           }
 
-          // Otherwise auto select either what's on the profile or the first item
-          const initialRuc = profile.companyRuc || companiesData[0].ruc;
+          // Otherwise: la última empresa que esta persona estuvo viendo, la de su perfil o la primera
+          const initialRuc = readLastCompany(profile.uid) || profile.companyRuc || companiesData[0].ruc;
           return (
             companiesData.find((c) => c.ruc === initialRuc) || companiesData[0]
           );
@@ -106,6 +116,9 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({
     const company = companies.find((c) => c.ruc === ruc);
     if (company) {
       setSelectedCompany(company);
+      try {
+        if (profile?.uid) localStorage.setItem(LAST_COMPANY_KEY + profile.uid, ruc);
+      } catch (e) {}
     }
   };
 

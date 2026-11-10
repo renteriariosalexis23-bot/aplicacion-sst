@@ -621,7 +621,7 @@ export const Users: React.FC = () => {
             <p className="text-xs text-amber-700 mt-1">
               Aquí aparecen todos los usuarios que se han registrado pero no
               tienen empresa. Puedes <strong>cambiar su rol</strong>{" "}
-              (Trabajador, Supervisor o Empleador) y
+              (Trabajador, Supervisor o Empleador) y{" "}
               <strong>asignarles una empresa</strong> para darles acceso.
             </p>
           </div>

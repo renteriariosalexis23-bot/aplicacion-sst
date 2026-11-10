@@ -129,11 +129,12 @@ export const Feed: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => 
   );
   const [commentText, setCommentText] = useState("");
 
+  // El anuncio va siempre a la empresa que se está viendo (salvo que se marque "todas")
   useEffect(() => {
-    if (isCreating && selectedCompany && !postToCompanyRuc) {
-      setPostToCompanyRuc(selectedCompany.ruc);
+    if (selectedCompany) {
+      setPostToCompanyRuc((prev) => (isCreating && prev === "ALL" ? prev : selectedCompany.ruc));
     }
-  }, [isCreating, selectedCompany, postToCompanyRuc]);
+  }, [isCreating, selectedCompany?.ruc]);
 
   useEffect(() => {
     const targetRuc = selectedCompany?.ruc || profile?.companyRuc;
@@ -615,7 +616,14 @@ export const Feed: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => 
       {isCreating &&
         (profile?.role === "employer" || profile?.role === "supervisor" || profile?.role === "super_admin" || profile?.role === "gerencia") && (
           <div className="bg-white rounded-xl shadow-sm p-6 mb-8 border border-slate-200">
-            <h2 className="text-lg font-semibold mb-4">Crear Publicación</h2>
+            <h2 className="text-lg font-semibold">Nuevo anuncio</h2>
+            <p className="mb-4 mt-0.5 text-sm text-slate-500">
+              Lo verá el personal de{" "}
+              <b className="text-slate-800">
+                {postToCompanyRuc === "ALL" ? "todas las empresas" : selectedCompany?.businessName || "la empresa"}
+              </b>
+              .
+            </p>
             {errorMsg && (
               <div className="mb-4 p-3 bg-red-50 text-red-700 border border-red-200 rounded-md text-sm">
                 {errorMsg}
