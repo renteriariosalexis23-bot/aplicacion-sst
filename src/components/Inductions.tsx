@@ -632,7 +632,7 @@ export const Inductions: React.FC = () => {
                               onClick={async () => {
                                 const sigUrl = profile.digitalSignatureConsent?.signatureUrl || profile.savedSignatureUrl;
                                 if (!sigUrl) {
-                                  toast.error("Debes configurar tu firma electrónica en tu perfil primero.");
+                                  toast.error("Primero guarda tu firma en Mi Perfil y vuelve a intentarlo.");
                                   return;
                                 }
                                 try {
@@ -640,8 +640,16 @@ export const Inductions: React.FC = () => {
                                     workerSignatureUrl: sigUrl,
                                     status: "completed"
                                   });
+                                  toast.success("Inducción firmada.");
+                                  await notifyAllEmployers(
+                                    "Inducción firmada por el trabajador",
+                                    `${profile.displayName} firmó su registro de inducción.`,
+                                    "/inductions",
+                                    ind.companyRuc,
+                                  );
                                 } catch (err) {
                                   console.error("Error signing:", err);
+                                  toast.error("No se pudo firmar. Inténtalo de nuevo.");
                                 }
                               }}
                               className="px-3 py-1 bg-blue-600 text-white rounded text-xs font-medium hover:bg-blue-700 transition"
