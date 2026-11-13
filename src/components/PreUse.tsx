@@ -504,7 +504,16 @@ export const PreUse: React.FC = () => {
                 Seleccionar Equipo o Vehículo
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {equipments.map((eq) => {
+                {/* Los equipos con plantilla de inspección se revisan desde Inspecciones, no aquí */}
+                {equipments.filter((eq) => !eq.inspectionTemplateId && (eq.checklistItems || []).length > 0).length === 0 && (
+                  <div className="col-span-full">
+                    <EmptyState
+                      text="No hay equipos con checklist de pre-uso."
+                      hint="El administrador los registra en «Gestión de Equipos»."
+                    />
+                  </div>
+                )}
+                {equipments.filter((eq) => !eq.inspectionTemplateId && (eq.checklistItems || []).length > 0).map((eq) => {
                   const misInspections = inspections.filter(
                     (i) =>
                       i.equipmentId === eq.id && i.workerUid === profile?.uid,
