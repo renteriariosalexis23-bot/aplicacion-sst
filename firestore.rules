@@ -188,7 +188,7 @@ service cloud.firestore {
              data.content is string && data.content.size() > 0 && data.content.size() <= 5000 &&
              data.authorId is string &&
              data.authorName is string && data.authorName.size() <= 100 &&
-             data.type in ['news', 'flyer', 'notice'] &&
+             data.type in ['news', 'flyer', 'notice', 'comunicado'] &&
              (!('reactions' in data) || data.reactions is map) &&
              (!('comments' in data) || data.comments is list) &&
              (!('readBy' in data) || data.readBy is list) &&
@@ -309,13 +309,16 @@ service cloud.firestore {
     match /posts/{postId} {
       // Everyone authenticated can read posts if they belong to the company
       allow read: if isAuthenticated() && (isDefaultAdmin() || isEmployer() || isEmployeeOf(resource.data.get('companyRuc', '')));
-      // Only employers can create posts
-      allow create: if (isDefaultAdmin() || isEmployer()) && isValidPost() && request.resource.data.authorId == request.auth.uid;
-      // Only the author or another employer can update/delete, OR anyone can update reactions/comments/readBy
-      allow update: if ((isDefaultAdmin() || isEmployer()) && isValidPost() && 
+      // Publican los administradores (a cualquier empresa) y el supervisor de SST (solo a la suya)
+      allow create: if (isDefaultAdmin() || isEmployer() ||
+                        (isSupervisor() && isEmployeeOf(request.resource.data.get('companyRuc', '')) && request.resource.data.get('companyRuc', '') != 'ALL')) &&
+                       isValidPost() && request.resource.data.authorId == request.auth.uid;
+      // El autor o un administrador editan; cualquiera puede reaccionar, comentar o marcar "enterado"
+      allow update: if ((isDefaultAdmin() || isEmployer() || (isSupervisor() && resource.data.authorId == request.auth.uid)) && isValidPost() &&
                     request.resource.data.authorId == resource.data.authorId) ||
                     (isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions', 'comments', 'readBy']));
-      allow delete: if isDefaultAdmin() || isEmployer();
+      // Borra un administrador, o el supervisor sus propias publicaciones
+      allow delete: if isDefaultAdmin() || isEmployer() || (isSupervisor() && resource.data.authorId == request.auth.uid);
     }
 
     match /documents/{documentId} {

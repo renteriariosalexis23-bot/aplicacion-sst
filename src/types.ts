@@ -40,7 +40,7 @@ export interface UserProfile {
   createdAt: any; // Firestore Timestamp
 }
 
-export type PostType = "news" | "flyer" | "notice";
+export type PostType = "news" | "flyer" | "notice" | "comunicado";
 export type ReactionType = "like" | "love" | "dislike";
 
 export interface Comment {

@@ -50,6 +50,7 @@ import { ConfirmationModal } from "./ui/ConfirmationModal";
 import { SignerBanner } from "./ui/SignerBanner";
 import { subscribeUserAreas } from "../utils/companyAreas";
 import { PageLoader, EmptyState } from "./ui/States";
+import { publishToWall } from "../utils/wallPosts";
 
 const DOCUMENT_CATEGORIES = [
   "Política y Objetivos SST",
@@ -213,6 +214,17 @@ export const Documents: React.FC = () => {
         "/documents",
         ruc,
       );
+
+      // Aviso en el Muro del Inicio, para que todos lo vean apenas entren
+      const areaText = targetArea && targetArea !== "Todas" ? ` Dirigido al área de ${targetArea}.` : "";
+      await publishToWall(profile, {
+        title: requiresSignature
+          ? files.length > 1 ? "Documentos nuevos por firmar" : `Documento por firmar: ${title}`.slice(0, 100)
+          : files.length > 1 ? "Documentos nuevos publicados" : `Documento nuevo: ${title}`.slice(0, 100),
+        content: `${files.length > 1 ? `Se publicaron ${files.length} documentos` : `Se publicó «${title}»`} en la sección Documentos.${requiresSignature ? " Léelo y fírmalo desde ahí." : ""}${areaText}`,
+        companyRuc: ruc,
+        link: `${window.location.origin}/documents`,
+      });
 
       setTitle("");
       setDescription("");

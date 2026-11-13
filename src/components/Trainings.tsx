@@ -49,6 +49,7 @@ import { exportToExcel } from "../utils/exportToExcel";
 import { SignerBanner } from "./ui/SignerBanner";
 import { subscribeUserAreas } from "../utils/companyAreas";
 import { PageLoader, EmptyState } from "./ui/States";
+import { publishToWall } from "../utils/wallPosts";
 
 export const Trainings: React.FC = () => {
   const { profile } = useAuth();
@@ -631,6 +632,14 @@ export const Trainings: React.FC = () => {
       } catch (notifError) {
         console.warn("Could not dispatch notifications to all workers:", notifError);
       }
+
+      // Aviso en el Muro del Inicio
+      await publishToWall(profile, {
+        title: `Nueva capacitación: ${title}`.slice(0, 100),
+        content: `${description ? description + "\n\n" : ""}Ya puedes completarla desde la sección Capacitaciones.${targetArea && targetArea !== "Todas" ? ` Dirigida al área de ${targetArea}.` : ""}`,
+        companyRuc: ruc,
+        link: `${window.location.origin}/trainings`,
+      });
 
       setTitle("");
       setDescription("");

@@ -56,6 +56,18 @@ const timeAgo = (date: Date) => {
   return format(date, days < 365 ? "d MMM" : "d MMM yyyy", { locale: es });
 };
 
+// Los enlaces escritos en una publicación se pueden tocar
+const linkify = (text: string) =>
+  text.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
+    /^https?:\/\//.test(part) ? (
+      <a key={i} href={part} className="break-all font-medium text-blue-600 underline underline-offset-2">
+        {part}
+      </a>
+    ) : (
+      part
+    ),
+  );
+
 const ExpandableText: React.FC<{ text: string; limit?: number }> = ({
   text,
   limit = 300,
@@ -64,12 +76,12 @@ const ExpandableText: React.FC<{ text: string; limit?: number }> = ({
   const shouldCollapse = text.length > limit;
 
   if (!shouldCollapse)
-    return <p className="whitespace-pre-wrap text-slate-700">{text}</p>;
+    return <p className="whitespace-pre-wrap text-slate-700">{linkify(text)}</p>;
 
   return (
     <div className="space-y-2">
       <p className="whitespace-pre-wrap text-slate-700">
-        {isExpanded ? text : `${text.substring(0, limit)}...`}
+        {linkify(isExpanded ? text : `${text.substring(0, limit)}...`)}
       </p>
       <button
         onClick={() => setIsExpanded(!isExpanded)}
@@ -91,7 +103,7 @@ const ExpandableText: React.FC<{ text: string; limit?: number }> = ({
 
 import { PageHeader } from "./ui/PageHeader";
 import { Newspaper } from "lucide-react";
-import { PageLoader } from "./ui/States";
+import { PageLoader, EmptyState } from "./ui/States";
 
 // embedded: el Muro dentro del Inicio (sin encabezado propio ni lista de pendientes,
 // que el Inicio ya muestra en «Lo urgente»)
@@ -111,7 +123,8 @@ export const Feed: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => 
   const [isCreating, setIsCreating] = useState(false);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [type, setType] = useState<PostType>("news");
+  const [type, setType] = useState<PostType>("comunicado");
+  const [filter, setFilter] = useState<"all" | PostType>("all");
   const [postToCompanyRuc, setPostToCompanyRuc] = useState<string>("");
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -310,6 +323,7 @@ export const Feed: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => 
 
       // Send notification to all workers
       let typeLabel = "Nueva Publicación";
+      if (type === "comunicado") typeLabel = "Nuevo Comunicado";
       if (type === "news") typeLabel = "Nueva Noticia";
       if (type === "flyer") typeLabel = "Nuevo Flyer";
       if (type === "notice") typeLabel = "Nuevo Aviso";
@@ -324,7 +338,7 @@ export const Feed: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => 
       toast.success("Publicación creada exitosamente.");
       setTitle("");
       setContent("");
-      setType("news");
+      setType("comunicado");
       setFile(null);
       setErrorMsg(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -428,6 +442,8 @@ export const Feed: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => 
 
   const getTypeColor = (type: PostType) => {
     switch (type) {
+      case "comunicado":
+        return "bg-rose-100 text-rose-800";
       case "news":
         return "bg-blue-100 text-blue-800";
       case "flyer":
@@ -441,6 +457,8 @@ export const Feed: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => 
 
   const getTypeLabel = (type: PostType) => {
     switch (type) {
+      case "comunicado":
+        return "Comunicado";
       case "news":
         return "Noticia";
       case "flyer":
@@ -653,6 +671,7 @@ export const Feed: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => 
                   onChange={(e) => setType(e.target.value as PostType)}
                   className="w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
                 >
+                  <option value="comunicado">Comunicado</option>
                   <option value="news">Noticia</option>
                   <option value="flyer">Flyer</option>
                   <option value="notice">Aviso</option>
@@ -772,6 +791,27 @@ export const Feed: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => 
           </div>
         )}
 
+      {/* Filtros del muro */}
+      {embedded && posts.length > 0 && (
+        <div className="tab-bar mb-4">
+          {([
+            ["all", "Todo"],
+            ["comunicado", "Comunicados"],
+            ["notice", "Avisos"],
+            ["news", "Noticias"],
+            ["flyer", "Flyers"],
+          ] as const).map(([value, label]) => (
+            <button
+              key={value}
+              onClick={() => setFilter(value)}
+              className={filter === value ? "bg-white text-blue-700 shadow-sm" : "text-slate-600"}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {loading ? (
         <PageLoader />
       ) : posts.length === 0 ? (
@@ -783,7 +823,10 @@ export const Feed: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => 
         </div>
       ) : (
         <div className="space-y-5">
-          {posts.map((post) => {
+          {posts.filter((p) => filter === "all" || p.type === filter).length === 0 && (
+            <EmptyState text="No hay publicaciones de este tipo." hint="Cambia el filtro para ver las demás." />
+          )}
+          {posts.filter((p) => filter === "all" || p.type === filter).map((post) => {
             const counts = getReactionCounts(post.reactions);
             const myReaction = profile ? post.reactions?.[profile.uid] : null;
 
