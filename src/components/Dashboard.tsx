@@ -57,7 +57,6 @@ import { Loader2, AlertTriangle,
   Maximize2,
   X,
   AlertOctagon,
-  Bot,
   Trash2,
   BarChart2 } from "lucide-react";
 import {
@@ -89,7 +88,6 @@ import {
   handleFirestoreError,
   OperationType,
 } from "../utils/firestoreErrorHandler";
-import { AIAuditorModal } from "./AIAuditorModal";
 import { isMainAdmin } from "../constants/admin";
 import { PageLoader } from "./ui/States";
 
@@ -116,7 +114,6 @@ export const Dashboard: React.FC = () => {
 
   const [medicalExams, setMedicalExams] = useState<any[]>([]);
   const [committeeEvents, setCommitteeEvents] = useState<CommitteeEvent[]>([]);
-  const [isAuditModalOpen, setAuditModalOpen] = useState(false);
 
   useEffect(() => {
     const targetRuc = selectedCompany?.ruc || profile?.companyRuc;
@@ -724,14 +721,6 @@ export const Dashboard: React.FC = () => {
     }
   }
 
-  const dataForAI = {
-    totalWorkers,
-    preuseComplianceRate,
-    expirationAlertsCount: expirationAlerts.length,
-    auditReadinessScores,
-    globalView
-  };
-
   return (
     <div id="dashboard-content" className="w-full space-y-5 rounded-xl bg-slate-50 pb-12 sm:space-y-8 sm:p-6">
       {nextMeeting && daysToMeeting !== null && (
@@ -795,13 +784,6 @@ export const Dashboard: React.FC = () => {
                 Actualizado: {format(new Date(), "HH:mm")}
               </span>
             </div>
-            <button
-              onClick={() => setAuditModalOpen(true)}
-              className="flex items-center bg-sky-500 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-sky-400 transition-colors shadow-sm print:hidden border border-sky-400"
-            >
-              <Bot className="w-5 h-5 mr-2" />
-              Auditoría asistida
-            </button>
             <button 
               onClick={handleExportPDF}
               className="flex items-center bg-white text-blue-700 rounded-lg px-4 py-2 text-sm font-medium hover:bg-blue-50 transition-colors shadow-sm print:hidden"
@@ -1688,12 +1670,6 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
       )}
-      {/* Final closing div for dashboard-content */}
-      <AIAuditorModal 
-        isOpen={isAuditModalOpen} 
-        onClose={() => setAuditModalOpen(false)} 
-        dataSummary={dataForAI} 
-      />
     </div>
   );
 };

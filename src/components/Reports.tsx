@@ -46,7 +46,6 @@ import { Loader2, AlertTriangle,
   Mic,
   Square,
   Download,
-  Sparkles,
   Edit3,
   FileSpreadsheet,
   User,
@@ -1388,7 +1387,7 @@ export const Reports: React.FC = () => {
                               <div className="bg-slate-50 border border-slate-200 rounded-xl overflow-hidden">
                                 <div className="bg-blue-50 px-4 py-3 border-b border-blue-100 flex items-center justify-between">
                                   <div className="flex items-center text-blue-800 font-semibold">
-                                    <Sparkles className="w-5 h-5 mr-2" />
+                                    <Search className="w-5 h-5 mr-2" />
                                     Investigación (
                                     {report.investigation.methodology})
                                   </div>
@@ -1506,7 +1505,7 @@ export const Reports: React.FC = () => {
                                   }
                                   className="flex items-center space-x-1.5 text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100"
                                 >
-                                  <Sparkles className="w-4 h-4" />
+                                  <Search className="w-4 h-4" />
                                   <span>Investigar</span>
                                 </button>
                               )}

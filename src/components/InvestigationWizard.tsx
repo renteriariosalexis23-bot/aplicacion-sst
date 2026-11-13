@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Report, Investigation } from "../types";
-import { X, Sparkles, Loader2, Save, Edit3 } from "lucide-react";
+import { X, Loader2, Save, Edit3 } from "lucide-react";
 import { updateDoc, doc } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuth } from "../AuthContext";
@@ -66,166 +66,8 @@ export const InvestigationWizard: React.FC<InvestigationWizardProps> = ({
     report.investigation?.recommendations?.join("\n") || "",
   );
 
-  const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const handleGenerateAI = async () => {
-    if (!activityPerformed.trim() || !consequences.trim()) {
-      setError(
-        "Por favor, completa la actividad y las consecuencias antes de usar la IA.",
-      );
-      return;
-    }
-
-    setIsGenerating(true);
-    setError(null);
-
-    try {
-      let methodologyFormat = "";
-      let userInputs = "";
-      if (methodology === "5whys") {
-        methodologyFormat = `"methodologyData": { "why1": "respuesta 1", "why2": "respuesta 2", "why3": "respuesta 3", "why4": "respuesta 4", "why5": "respuesta 5" },`;
-        userInputs = `
-        Datos proporcionados por el usuario para 5 ¿Por qué?:
-        - ¿Por qué 1?: ${whys[0]}
-        - ¿Por qué 2?: ${whys[1]}
-        - ¿Por qué 3?: ${whys[2]}
-        - ¿Por qué 4?: ${whys[3]}
-        - ¿Por qué 5?: ${whys[4]}
-        `;
-      } else if (methodology === "ishikawa") {
-        methodologyFormat = `"methodologyData": { "manpower": "Mano de obra...", "machine": "Máquina...", "material": "Material...", "method": "Método...", "environment": "Medio ambiente...", "measurement": "Medición..." },`;
-        userInputs = `
-        Datos proporcionados por el usuario para Ishikawa:
-        - Mano de Obra: ${ishikawa.manpower}
-        - Máquina: ${ishikawa.machine}
-        - Material: ${ishikawa.material}
-        - Método: ${ishikawa.method}
-        - Medio Ambiente: ${ishikawa.environment}
-        - Medición: ${ishikawa.measurement}
-        `;
-      } else if (methodology === "icam") {
-        methodologyFormat = `"methodologyData": { "defenses": "Defensas ausentes o fallidas...", "actions": "Acciones individuales o de equipo...", "conditions": "Condiciones de la tarea o entorno...", "organizational": "Factores organizacionales..." },`;
-        userInputs = `
-        Datos proporcionados por el usuario para ICAM:
-        - Defensas ausentes/fallidas: ${icam.defenses}
-        - Acciones individuales/equipo: ${icam.actions}
-        - Condiciones de la tarea/entorno: ${icam.conditions}
-        - Factores organizacionales: ${icam.organizational}
-        `;
-      } else if (methodology === "fault_tree") {
-        methodologyFormat = `"methodologyData": { "topEvent": "Hecho principal (accidente/incidente)...", "causes": "Desarrollo de las causas previas..." },`;
-        userInputs = `
-        Datos proporcionados por el usuario para Árbol de Causas:
-        - Hecho principal: ${faultTree.topEvent}
-        - Causas: ${faultTree.causes}
-        `;
-      }
-
-      const prompt = `
-        Eres un experto en Seguridad y Salud en el Trabajo (SST).
-        Tu tarea es realizar o mejorar una investigación de un evento (accidente o incidente) utilizando la metodología: ${methodology}.
-        
-        Datos del evento:
-        - Tipo: ${report.type === "accident" ? "Accidente" : report.type === "incident" ? "Incidente" : report.type}
-        - Descripción: ${report.description}
-        - Lugar: ${report.location}
-        - Fecha: ${report.date}
-        - Trabajador involucrado: ${report.reportedByName}
-        - Actividad que realizaba: ${activityPerformed}
-        - Consecuencias o daños: ${consequences}
-
-        ${userInputs}
-
-        Instrucciones:
-        1. Si el usuario proporcionó datos para la metodología, úsalos como base, mejóralos y complétalos.
-        2. Si los datos del usuario están vacíos, genera tú mismo el análisis completo de la metodología.
-        3. Genera el resto del informe (causas inmediatas, básicas, medidas, etc.) basándote en el análisis.
-
-        Genera un informe de investigación estructurado en formato JSON con las siguientes claves exactas:
-        {
-          "summary": "Resumen claro y conciso del evento",
-          ${methodologyFormat}
-          "immediateCauses": ["causa inmediata 1", "causa inmediata 2"],
-          "basicCauses": ["causa básica 1", "causa básica 2"],
-          "correctiveMeasures": ["medida correctiva 1", "medida correctiva 2"],
-          "preventiveMeasures": ["medida preventiva 1", "medida preventiva 2"],
-          "recommendations": ["recomendación SST 1", "recomendación SST 2"]
-        }
-        
-        Asegúrate de que el resultado sea un JSON válido y que el análisis sea profundo y profesional.
-      `;
-
-      const httpResponse = await fetch('/api/gemini/generate-json', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt }),
-      });
-
-      let parsedResult;
-      const contentType = httpResponse.headers.get("content-type");
-      if (contentType && contentType.indexOf("application/json") !== -1) {
-        parsedResult = await httpResponse.json();
-      } else {
-        const textResponse = await httpResponse.text();
-        console.error("Respuesta no JSON:", textResponse.substring(0, 200));
-        throw new Error("El servidor no devolvió JSON (posible error 404 o de Vercel).");
-      }
-      
-      if (!httpResponse.ok) {
-        throw new Error(parsedResult.error || "Ocurrió un error al contactar al servidor.");
-      }
-
-      setSummary(parsedResult.summary || "");
-
-      if (methodology === "5whys") {
-        const md = parsedResult.methodologyData || {};
-        setWhys([
-          md.why1 || "",
-          md.why2 || "",
-          md.why3 || "",
-          md.why4 || "",
-          md.why5 || "",
-        ]);
-      } else if (methodology === "ishikawa") {
-        const md = parsedResult.methodologyData || {};
-        setIshikawa({
-          manpower: md.manpower || "",
-          machine: md.machine || "",
-          material: md.material || "",
-          method: md.method || "",
-          environment: md.environment || "",
-          measurement: md.measurement || "",
-        });
-      } else if (methodology === "icam") {
-        const md = parsedResult.methodologyData || {};
-        setIcam({
-          defenses: md.defenses || "",
-          actions: md.actions || "",
-          conditions: md.conditions || "",
-          organizational: md.organizational || "",
-        });
-      } else if (methodology === "fault_tree") {
-        const md = parsedResult.methodologyData || {};
-        setFaultTree({
-          topEvent: md.topEvent || "",
-          causes: md.causes || "",
-        });
-      }
-
-      setImmediateCauses((parsedResult.immediateCauses || []).join("\n"));
-      setBasicCauses((parsedResult.basicCauses || []).join("\n"));
-      setCorrectiveMeasures((parsedResult.correctiveMeasures || []).join("\n"));
-      setPreventiveMeasures((parsedResult.preventiveMeasures || []).join("\n"));
-      setRecommendations((parsedResult.recommendations || []).join("\n"));
-    } catch (err) {
-      console.error("Error generating investigation:", err);
-      setError("Hubo un error al generar la investigación. Intenta de nuevo.");
-    } finally {
-      setIsGenerating(false);
-    }
-  };
 
   const handleSave = async () => {
     if (!summary.trim()) {
@@ -391,8 +233,8 @@ export const InvestigationWizard: React.FC<InvestigationWizardProps> = ({
                       : "Árbol de Causas"}
               </h4>
               <p className="text-sm text-slate-500 mb-4">
-                Llena los datos que conozcas. La IA usará esta información para
-                completar y mejorar la investigación.
+                Llena los datos que conozcas de la metodología elegida; sirven de base para
+                completar los detalles de abajo.
               </p>
 
               {methodology === "5whys" && (
@@ -594,24 +436,6 @@ export const InvestigationWizard: React.FC<InvestigationWizardProps> = ({
                 </div>
               )}
             </div>
-
-            <button
-              onClick={handleGenerateAI}
-              disabled={isGenerating}
-              className="w-full flex items-center justify-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 font-medium text-lg shadow-sm"
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="w-6 h-6 animate-spin mr-2" />
-                  Investigando...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-6 h-6 mr-2" />
-                  Investigar
-                </>
-              )}
-            </button>
           </div>
 
           <div className="space-y-4 border-t border-slate-200 pt-6">
@@ -619,8 +443,7 @@ export const InvestigationWizard: React.FC<InvestigationWizardProps> = ({
               Detalles de la Investigación
             </h3>
             <p className="text-sm text-slate-500 mb-4">
-              Puedes escribir manualmente o usar el botón de arriba para que la
-              IA genere un borrador basado en la metodología elegida.
+              Completa el resumen, las causas y las medidas a partir del análisis de arriba.
             </p>
 
             <div>

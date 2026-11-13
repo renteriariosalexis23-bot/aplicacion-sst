@@ -40,7 +40,6 @@ import { Loader2, ClipboardCheck,
   AlertTriangle,
   Camera,
   PenTool,
-  Sparkles,
   Download,
   Search,
   FileSpreadsheet,
@@ -138,8 +137,6 @@ export const Inspections: React.FC = () => {
   const [newTemplateItems, setNewTemplateItems] = useState<InspectionItem[]>(
     [],
   );
-  const [aiPrompt, setAiPrompt] = useState("");
-  const [isGenerating, setIsGenerating] = useState(false);
 
   // Inspection Taking State
   const [takingInspection, setTakingInspection] =
@@ -211,61 +208,6 @@ export const Inspections: React.FC = () => {
     }
   };
 
-  const generateTemplateWithAI = async () => {
-    if (!aiPrompt) return;
-    setIsGenerating(true);
-    setError(null);
-    try {
-      const prompt = `Genera una lista de ítems de inspección para: ${aiPrompt}. 
-      Devuélvelo estrictamente en formato JSON con un array de objetos, cada uno con 'question' (string) y 'type' (boolean, text, o number). Un ejemplo: [{"question": "¿El piso está limpio?", "type": "boolean"}]`;
-      
-      const httpResponse = await fetch('/api/gemini/generate-json', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt }),
-      });
-
-      let parsedData;
-      const contentType = httpResponse.headers.get("content-type");
-      if (contentType && contentType.indexOf("application/json") !== -1) {
-        parsedData = await httpResponse.json();
-      } else {
-        const textResponse = await httpResponse.text();
-        console.error("Respuesta no JSON del servidor:", textResponse.substring(0, 200));
-        throw new Error("El servidor no devolvió una respuesta válida (posible error 404 o configuración de Vercel incorrecta).");
-      }
-      
-      if (!httpResponse.ok) {
-         throw new Error(parsedData.error || "Error al contactar al servidor.");
-      }
-
-      console.log("Respuesta de IA recibida");
-
-      const generatedItems = parsedData as {
-        question: string;
-        type: "boolean" | "text" | "number";
-      }[];
-
-      if (!Array.isArray(generatedItems)) {
-        throw new Error("El formato devuelto no es válido.");
-      }
-
-      setNewTemplateItems(
-        generatedItems.map((item) => ({
-          id: Date.now().toString() + Math.random(),
-          question: item.question,
-          type: item.type,
-          required: true,
-        })),
-      );
-    } catch (err: any) {
-      console.error("Error detallado de IA:", err);
-      const errorMessage = err.message || "Error desconocido";
-      setError(`Error al generar la plantilla con IA: ${errorMessage}`);
-    } finally {
-      setIsGenerating(false);
-    }
-  };
 
   useEffect(() => {
     const handleSmartQR = async () => {
@@ -1321,31 +1263,6 @@ export const Inspections: React.FC = () => {
             </div>
 
             <form onSubmit={handleSaveTemplate} className="space-y-6">
-              {/* AI Generation Section */}
-              <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 space-y-3">
-                <label className="block text-sm font-medium text-blue-900">
-                  Generar con IA
-                </label>
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <input
-                    type="text"
-                    value={aiPrompt}
-                    onChange={(e) => setAiPrompt(e.target.value)}
-                    className="min-w-0 flex-1 px-3 py-2 border border-blue-200 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Ej. Checklist para inspección de montacargas"
-                  />
-                  <button
-                    type="button"
-                    onClick={generateTemplateWithAI}
-                    disabled={isGenerating || !aiPrompt}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center"
-                  >
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    {isGenerating ? "Generando..." : "Generar"}
-                  </button>
-                </div>
-              </div>
-
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
                   Título de la Inspección
