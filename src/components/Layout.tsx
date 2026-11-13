@@ -21,6 +21,7 @@ export const Layout: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [menuQuery, setMenuQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [pendingReviewCount, setPendingReviewCount] = useState(0);
 
@@ -46,6 +47,7 @@ export const Layout: React.FC = () => {
 
   React.useEffect(() => {
     setIsMobileMenuOpen(false);
+    setMenuQuery("");
   }, [location.pathname]);
 
   // Nombre que figura como "generado por" en la verificación de los PDF
@@ -221,47 +223,46 @@ export const Layout: React.FC = () => {
     </select>
   );
 
+  // Lista de módulos del panel: una sola columna, íconos simples, el activo con una barra fina
+  const moduleQuery = menuQuery.trim().toLowerCase();
   const modulesList = (
-    <div className="gap-x-8 sm:columns-2 lg:columns-3">
-      {Object.entries(groupedNavigation).map(([group, items]) => (
-        <div key={group} className="mb-6 break-inside-avoid">
-          <p className="px-3 pb-2 text-[11px] font-bold uppercase tracking-[0.12em] text-blue-600">
-            {group === "General" ? "General" : group}
-          </p>
-          <div className="space-y-0.5">
-            {items.map((item) => {
-              const isActive = location.pathname === item.href;
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors ${
-                    isActive
-                      ? "bg-blue-600 text-white"
-                      : "text-slate-700 hover:bg-blue-50 hover:text-blue-700"
-                  }`}
-                >
-                  <span
-                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
-                      isActive ? "bg-white/15" : "bg-blue-50 text-blue-600 group-hover:bg-white"
+    <div>
+      {Object.entries(groupedNavigation)
+        .map(([group, items]) => [group, items.filter((i) => !moduleQuery || i.name.toLowerCase().includes(moduleQuery))] as const)
+        .filter(([, items]) => items.length > 0)
+        .map(([group, items]) => (
+          <div key={group} className="mb-5">
+            <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-400">{group}</p>
+            <div>
+              {items.map((item) => {
+                const isActive = location.pathname === item.href;
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={`relative flex items-center gap-3 rounded-lg px-3 py-2 text-[15px] transition-colors ${
+                      isActive ? "bg-slate-100 font-semibold text-slate-900" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                     }`}
                   >
-                    <Icon className="h-[18px] w-[18px]" />
-                  </span>
-                  <span className="truncate">{item.name}</span>
-                  {item.name === "Reuniones y Seguimiento" && pendingReviewCount > 0 && (
-                    <span className="ml-auto shrink-0 rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold text-white">
-                      {pendingReviewCount}
-                    </span>
-                  )}
-                </Link>
-              );
-            })}
+                    {isActive && <span className="absolute inset-y-1.5 left-0 w-[3px] rounded-full bg-blue-600" />}
+                    <Icon className={`h-[18px] w-[18px] shrink-0 ${isActive ? "text-blue-600" : "text-slate-400"}`} strokeWidth={1.75} />
+                    <span className="truncate">{item.name}</span>
+                    {item.name === "Reuniones y Seguimiento" && pendingReviewCount > 0 && (
+                      <span className="ml-auto shrink-0 rounded-full bg-[#c23a4f] px-2 py-0.5 text-[10px] font-bold text-white">
+                        {pendingReviewCount}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      {moduleQuery && Object.values(groupedNavigation).every((items) => !items.some((i) => i.name.toLowerCase().includes(moduleQuery))) && (
+        <p className="px-3 py-6 text-center text-sm text-slate-500">No hay módulos con ese nombre.</p>
+      )}
     </div>
   );
 
@@ -393,59 +394,51 @@ export const Layout: React.FC = () => {
         </nav>
         <button
           onClick={() => setIsMobileMenuOpen(true)}
-          className="flex items-center gap-2 rounded-full bg-blue-600 px-6 py-3 text-[13px] font-semibold text-white shadow-sm hover:bg-blue-700"
+          className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-[13px] font-semibold text-slate-700 hover:bg-slate-50"
         >
-          <LayoutGrid className="h-4 w-4" />
-          Todos los módulos
+          <LayoutGrid className="h-4 w-4 text-slate-400" />
+          Módulos
         </button>
       </div>
 
-      {/* Panel de módulos (escritorio y móvil) */}
+      {/* Panel de módulos: lateral en computadora, pantalla completa en celular */}
       {isMobileMenuOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-start justify-center bg-blue-950/40 backdrop-blur-[2px] md:p-8"
-          onClick={() => setIsMobileMenuOpen(false)}
-        >
+        <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/30" onClick={() => setIsMobileMenuOpen(false)}>
           <div
             role="dialog"
             aria-label="Módulos"
-            className="flex h-full w-full max-w-5xl flex-col overflow-hidden bg-white shadow-2xl md:h-auto md:max-h-[calc(100vh-4rem)] md:rounded-[26px] animate-in fade-in slide-in-from-bottom-4 duration-200"
+            className="flex h-full w-full flex-col bg-white shadow-2xl sm:max-w-[400px]"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="brand-gradient flex shrink-0 items-center justify-between px-5 py-4 text-white md:px-8 md:py-5">
-              <div className="flex min-w-0 items-center gap-3">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-white/60 bg-white/90 font-bold text-blue-600">
-                  {initials}
-                </div>
-                <div className="min-w-0 leading-tight">
-                  <b className="block truncate">{profile?.displayName || "Usuario"}</b>
-                  <small className="text-white/80">{roleLabel(profile?.role)}</small>
-                </div>
+            <div className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">
+              <div className="min-w-0 leading-tight">
+                <b className="block truncate text-[15px] text-slate-900">{profile?.displayName || "Usuario"}</b>
+                <small className="text-[13px] text-slate-500">{roleLabel(profile?.role)}</small>
               </div>
               <button
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/15 hover:bg-white/25"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900"
                 aria-label="Cerrar"
               >
-                <X className="h-6 w-6" />
+                <X className="h-5 w-5" />
               </button>
             </div>
 
             {(canSwitchCompany || workerCompany) && (
-              <div className="shrink-0 border-b border-slate-200 px-5 py-4 md:px-8">
-                <div className="relative flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-                  <CompanyLogo className="h-8 w-16 shrink-0 object-contain" />
+              <div className="shrink-0 px-5 pt-4">
+                <div className="relative flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-2.5">
+                  <CompanyLogo className="h-7 w-12 shrink-0 object-contain" />
                   <span className="min-w-0 flex-1 leading-tight">
-                    <small className="block text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
-                      {canSwitchCompany ? "Viendo · toca para cambiar" : "Tu empresa"}
+                    <small className="block text-[11px] text-slate-400">
+                      {canSwitchCompany ? "Empresa · tocar para cambiar" : "Tu empresa"}
                     </small>
-                    <b className="block truncate text-sm text-slate-900">
+                    <b className="block truncate text-sm font-semibold text-slate-900">
                       {canSwitchCompany ? selectedCompany?.businessName : workerCompany?.businessName}
                     </b>
                   </span>
                   {canSwitchCompany && (
                     <>
-                      <span aria-hidden="true" className="text-slate-500">▾</span>
+                      <span aria-hidden="true" className="text-xs text-slate-400">▾</span>
                       {companySelect}
                     </>
                   )}
@@ -453,24 +446,39 @@ export const Layout: React.FC = () => {
               </div>
             )}
 
-            <div className="flex-1 overflow-y-auto px-3 py-5 md:px-6 md:py-6">
-              <Link
-                to="/"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="mb-5 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-blue-50 hover:text-blue-700"
-              >
-                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-                  <Home className="h-[18px] w-[18px]" />
-                </span>
-                Inicio
-              </Link>
+            <div className="shrink-0 px-5 pb-2 pt-4">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="search"
+                  value={menuQuery}
+                  onChange={(e) => setMenuQuery(e.target.value)}
+                  placeholder="Buscar módulo"
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm placeholder:text-slate-400"
+                />
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-3 py-3">
+              {!moduleQuery && (
+                <Link
+                  to="/"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`mb-4 flex items-center gap-3 rounded-lg px-3 py-2 text-[15px] ${
+                    location.pathname === "/" ? "bg-slate-100 font-semibold text-slate-900" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                  }`}
+                >
+                  <Home className={`h-[18px] w-[18px] ${location.pathname === "/" ? "text-blue-600" : "text-slate-400"}`} strokeWidth={1.75} />
+                  Inicio
+                </Link>
+              )}
               {modulesList}
             </div>
 
-            <div className="shrink-0 border-t border-slate-200 px-5 py-4 pb-safe md:hidden">
+            <div className="shrink-0 border-t border-slate-200 px-5 py-3 pb-safe">
               <button
                 onClick={logout}
-                className="flex w-full items-center justify-center gap-2 rounded-md bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-red-50 hover:text-red-700"
+                className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-red-700"
               >
                 <LogOut className="h-4 w-4" />
                 Cerrar sesión
